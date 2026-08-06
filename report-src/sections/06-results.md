@@ -34,7 +34,9 @@ that model's count rises from 25{m: code/projects/crowd-wisdom/results/summary.c
 talks past its budget and never reaches an answer. A single fixed prompt would therefore penalise
 models by their verbosity, not by their reasoning.
 
-### R2 — forecasting: every metric, by prompt condition
+### R2 — ForecastBench: every metric, by prompt condition
+
+**ForecastBench only.** The two forecasting datasets are never pooled — their base rates differ (0.175{m: code/projects/crowd-wisdom/results/summary.csv} vs 0.45{m: code/projects/crowd-wisdom/results/summary.csv}), so a combined number would be a mixture of two different questions.
 
 40{m: code/projects/crowd-wisdom/results/summary.csv} resolved binary questions, base rate 0.175{m: code/projects/crowd-wisdom/results/summary.csv} YES. Means over the three models.
 
@@ -70,6 +72,45 @@ precision 0.360{m: code/projects/crowd-wisdom/results/summary.csv}; the FB condi
 0.333{m: code/projects/crowd-wisdom/results/summary.csv}. Accuracy ranks them almost identically because true negatives dominate a set
 that is one-sixth YES.
 
+### R2b — `BTF-3`: the clean test, and the expert bar
+
+ForecastBench's headline conditions carry a market price, so they cannot answer "can these models
+forecast?". `BTF-3` can: it ships **no market price at all**, and it ships a published expert forecast
+per question. `40`{m: code/projects/crowd-wisdom/results/summary.csv} questions, base rate 0.462{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json} — balanced, so accuracy is readable here.
+
+The three `FB-*` price conditions were run on `BTF-3` before the price slot was noticed to render
+`N/A`. They are **marked `DEGENERATE-EXCLUDED` in `summary.csv` and excluded from this table**, not
+deleted. Eight conditions remain.
+
+| condition | ROC-AUC | Brier | accuracy | F1 |
+|---|---|---|---|---|
+| `BTF-cot-simple` | 0.6{m: code/projects/crowd-wisdom/results/summary.csv} | 0.3336{m: code/projects/crowd-wisdom/results/summary.csv} | 0.546{m: code/projects/crowd-wisdom/results/summary.csv} | 0.486{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `cot-simple` | 0.566{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2831{m: code/projects/crowd-wisdom/results/summary.csv} | 0.554{m: code/projects/crowd-wisdom/results/summary.csv} | 0.521{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `FBnp-zeroshot` | 0.547{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2611{m: code/projects/crowd-wisdom/results/summary.csv} | 0.538{m: code/projects/crowd-wisdom/results/summary.csv} | 0.483{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `BTF-cot-concise` | 0.536{m: code/projects/crowd-wisdom/results/summary.csv} | 0.3365{m: code/projects/crowd-wisdom/results/summary.csv} | 0.589{m: code/projects/crowd-wisdom/results/summary.csv} | 0.562{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `FBnp-cot-simple` | 0.523{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2772{m: code/projects/crowd-wisdom/results/summary.csv} | 0.563{m: code/projects/crowd-wisdom/results/summary.csv} | 0.403{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `BTF-noevidence` | 0.512{m: code/projects/crowd-wisdom/results/summary.csv} | 0.394{m: code/projects/crowd-wisdom/results/summary.csv} | 0.504{m: code/projects/crowd-wisdom/results/summary.csv} | 0.511{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `FBnp-cot-concise` | 0.479{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2857{m: code/projects/crowd-wisdom/results/summary.csv} | 0.5{m: code/projects/crowd-wisdom/results/summary.csv} | 0.361{m: code/projects/crowd-wisdom/results/summary.csv} |
+| `cot-concise` | 0.469{m: code/projects/crowd-wisdom/results/summary.csv} | 0.3669{m: code/projects/crowd-wisdom/results/summary.csv} | 0.482{m: code/projects/crowd-wisdom/results/summary.csv} | 0.492{m: code/projects/crowd-wisdom/results/summary.csv} |
+| **published expert** | **0.8241{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json}** | **0.1682{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json}** | **0.8205{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json}** | — |
+
+**Every model condition sits at chance.** ROC-AUC spans 0.469{m: code/projects/crowd-wisdom/results/summary.csv} to 0.6{m: code/projects/crowd-wisdom/results/summary.csv} across eight prompts and
+three models — a band that straddles the `0.5` no-discrimination line. No prompt rescues it: BTF's own
+heuristics on BTF's own questions reach 0.6{m: code/projects/crowd-wisdom/results/summary.csv}, our bare wrapper 0.566{m: code/projects/crowd-wisdom/results/summary.csv}.
+
+**Only three of twenty-four valid cells beat a constant-base-rate forecaster** (Brier
+0.2485{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json}). Twenty-one do worse than a forecaster that ignores the question and emits `0.462` every time.
+
+**The expert baseline is not close.** Brier 0.1682{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json} against the best model cell's 0.2417{m: code/projects/crowd-wisdom/results/summary.csv}, ROC-AUC
+0.8241{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json} against 0.6616{m: code/projects/crowd-wisdom/results/summary.csv}. **Zero of twenty-four** valid model cells beat it on Brier. For the
+crowd-wisdom question that is the useful number: this is the bar a committee has to clear, and no
+individual member is near it.
+
+**A note on the expert column.** `BTF-3`'s `sota_forecast_probability` is on a **`0`-to-`100` scale despite
+its name**. Scored as a probability it gives a Brier of `2504`. The analysis divides by `100` and
+asserts the range, so an upstream change to a genuine `0`-to-`1` scale fails loudly rather than being
+divided twice.
+
 ### R3 — a published prompt that does not transfer
 
 Bench-to-the-Future's prompt scores worst on every metric, with ROC-AUC at chance. On
@@ -79,6 +120,12 @@ four thousand characters of heuristics leave a small-context model no room, and 
 think twice before forecasting under three percent inflates probabilities on a set where five in
 six questions resolve NO. BTF's own paper ranks this architecture as its weakest, so this
 reproduces their finding rather than contradicting it.
+
+**On its home dataset it does no better.** Run on `BTF-3` — the pastcasting set its authors built —
+`BTF-noevidence` reaches ROC-AUC 0.512{m: code/projects/crowd-wisdom/results/summary.csv} and Brier 0.394{m: code/projects/crowd-wisdom/results/summary.csv}, the worst Brier of any condition on
+either dataset. So the transfer failure in R2 is not a mismatch between BTF's prompt and
+ForecastBench's questions; the no-evidence architecture simply does not discriminate at this model
+scale.
 
 ### R4 — instruction compliance as a fingerprint
 

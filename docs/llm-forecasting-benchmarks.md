@@ -105,11 +105,14 @@ aux/scraped_pages.parquet                                            737.1 MB   
   resolution_explanation, sota_forecast_probability, sota_summary_rationale`.
 - **`present_date`** is the pastcasting anchor — the date the model is told it is.
 - **`sota_forecast_probability` is a published per-question expert baseline**, which is exactly what a
-  "can a crowd beat an expert" comparison needs.
+  "can a crowd beat an expert" comparison needs. **⚠ Its values are on a 0–100 PERCENTAGE scale despite the
+  name** (observed range 2.0–97.0, median 38.0, measured on the 1,515-row parquet). Scored as a probability
+  it yields a Brier of **2504**. Divide by 100 — and assert the range, so a future genuine 0–1 release fails
+  loudly instead of being divided twice. Present on 1,427 of 1,515 rows.
 - The arXiv paper describes **299** questions (BTF-1); the public release is **BTF-3, 1,907**. Different
   editions — cite whichever you used.
 
-## FOUR RETRIEVAL TRAPS (each cost real time)
+## FIVE TRAPS (each cost real time)
 
 1. **HuggingFace's search index does not return `BTF-2/BTF-3`** for `BTF`, `pastcasting`, `bench to the
    future`, or `futuresearch`. Only a **direct repo lookup** finds it. I concluded from a negative search
@@ -120,7 +123,11 @@ aux/scraped_pages.parquet                                            737.1 MB   
 3. **ForecastBench ids are heterogeneous.** 501 are strings (single questions); **496 are LISTS** —
    combination questions asking for a joint probability over two. `{q["id"]: q}` raises
    `TypeError: unhashable type: 'list'`. Filter by `isinstance(id, str)` for single questions.
-4. **`google-deepmind/bbeh` is not an HF dataset** (404) despite appearing in search results as though it
+4. **A column named `…_probability` is not necessarily a probability.** BTF-3's
+   `sota_forecast_probability` is 0–100. The name asserted a scale the data did not have, and nothing
+   errors — you just get a Brier four orders of magnitude too large. *Check the observed range of any
+   numeric column before scoring it, however the column is named.*
+5. **`google-deepmind/bbeh` is not an HF dataset** (404) despite appearing in search results as though it
    were; BBEH lives on GitHub. Same class of error as trap 1, opposite direction.
 
 ## Scoring

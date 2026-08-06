@@ -21,6 +21,10 @@ Three claims are **not supported** by this data.
 
 **Nothing here says these models can forecast.** Without market information their ROC-AUC sits near the
 no-discrimination floor. The apparent competence in the headline conditions was borrowed from the prompt.
+`BTF-3` settles this on a dataset that has no market price to borrow from: across eight valid conditions and
+three models, ROC-AUC spans 0.469{m: code/projects/crowd-wisdom/results/summary.csv} to 0.6{m: code/projects/crowd-wisdom/results/summary.csv}, and only three of twenty-four cells beat a
+constant-base-rate forecaster. The published expert on the same questions scores ROC-AUC 0.8241{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json} and
+Brier 0.1682{m: code/projects/crowd-wisdom/results/btf3_expert_baseline.json}, which **no model cell beats**.
 
 **Nothing here tests the crowd-wisdom hypothesis.** Three models cannot be clustered; the elbow and
 silhouette methods in the design need far more points. This work produces the substrate — `2,970` traces
@@ -32,10 +36,10 @@ construction, and IFEval and TruthfulQA are unscored.
 
 ### What is still open
 
-1. **`BTF-3` is downloaded and unrun** — 1515{m: code/projects/crowd-wisdom/survey/DATASETS.md}
-   resolved binary questions carrying their own `present_date` and a per-question published expert
-   forecast. That last column is what the first hypothesis needs to compare a committee against an expert, and it
-   is the right substrate for BTF's prompt.
+1. **`BTF-3` is run on `40`{m: code/projects/crowd-wisdom/results/summary.csv} of its 1515{m: code/projects/crowd-wisdom/survey/DATASETS.md} questions** —
+   the eligibility cap on field length leaves 259{m: code/projects/crowd-wisdom/survey/DATASETS.md} candidates, and
+   forty were drawn from those. Extending coverage needs a larger-context model, not more GPU time. The expert
+   column is now scored and gives the committee a real bar to clear.
 2. **IFEval and TruthfulQA scoring**, which would convert `100` dead rows per model per arm into two of the
    nine behaviour features the design calls for.
 3. **The roster.** Steps `4` through `8` need `20` to `30` models. Measured throughput says that is roughly eight

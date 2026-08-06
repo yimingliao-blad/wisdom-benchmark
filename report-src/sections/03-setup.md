@@ -67,6 +67,62 @@ control. Every one ends with a parseable probability.
 | `cot-simple` | **ours** | hidden | step by step | bare probability |
 | `cot-concise` | **ours** | hidden | key steps only | bare probability |
 
+### How a Family B prompt is composed
+
+Every forecasting prompt is built from the same eight slots. What distinguishes the eleven conditions is
+**which slots are filled and what goes in the last two** — not different questions.
+
+```
+┌ FRAMING ─────────── who the model is told it is
+│   ForecastBench : "You are an expert superforecaster, familiar with the work of Tetlock…"
+│   BTF           : "You are a professional forecaster interviewing for a job."
+│   ours          : (none — the fields alone)
+├ QUESTION ────────── the benchmark's question text, verbatim
+├ BACKGROUND ──────── the benchmark's background field, verbatim
+├ RESOLUTION CRITERIA  how the question will be judged, verbatim
+├ MARKET PRICE ────── the live prediction-market value   ← ONLY the three FB-with-price conditions
+├ DATES ───────────── "Today's Date" / `present_date`, and the resolution date
+├ HEURISTICS ──────── ~4,000 chars of forecasting advice  ← ONLY the three BTF conditions
+│                     (base rates, status quo, scope, pre-mortem, "think twice below 3%")
+├ REASONING SLOT ──── ★ THE VARIABLE ★
+│   none      : "Do not output anything else."          (the two zero-shot conditions)
+│   simple    : "Think step by step, showing your reasoning."
+│   concise   : "Reason through the necessary steps only — not every detail or restatement."
+│   (a)-(e)   : BTF's five mandatory steps, always present in BTF conditions
+└ ANSWER CONTRACT ── ★ FIXED PER FAMILY ★
+    ForecastBench : an asterisk-wrapped decimal, e.g. *0.35*
+    BTF and ours  : "your final answer as a probability between 0 and 1" on the last line
+```
+
+So the eleven conditions are a crossing of **three framings** (FB, BTF, ours) with **three reasoning
+slots** (none, simple, concise), minus the combinations that do not exist, plus the price on/off pair for
+ForecastBench. The question, background and criteria are identical in every one — only framing, heuristics,
+the reasoning slot and the answer contract move.
+
+### Which conditions are valid on which dataset
+
+Not all eleven apply to both benchmarks, and running one where it does not apply produces a **degenerate**
+prompt rather than an error — so this is stated rather than left implicit.
+
+| condition | ForecastBench | `BTF-3` | why |
+|---|---|---|---|
+| `FB-zeroshot` | valid | **DEGENERATE** | `BTF-3` has no market price; the slot renders `N/A` |
+| `FB-cot-simple` | valid | **DEGENERATE** | same |
+| `FB-cot-concise` | valid | **DEGENERATE** | same |
+| `FBnp-*` (three) | valid | valid | no price slot to fill |
+| `BTF-*` (three) | valid | valid — **and this is its home dataset** | BTF's prompt on BTF's own questions |
+| `cot-simple` | valid | valid | minimal wrapper; the fields exist in both |
+| `cot-concise` | valid | valid | same |
+
+**Why `cot-simple` and `cot-concise` earn their place.** They are the *minimal-wrapper control*: the same
+fields, the same reasoning instruction, but **no expert framing and no heuristics**. Without them, a
+difference between ForecastBench and BTF could be the framing, the heuristics, the answer contract, or
+their interaction — with them, the question "does any published framing beat simply asking?" has an answer.
+They are the only conditions that isolate that.
+
+The three degenerate cells were run before this was noticed. They are **excluded from `BTF-3` analysis and
+reported as excluded**, not silently dropped.
+
 **What each one is for.**
 
 - **`FB-zeroshot`** reproduces ForecastBench's shipped prompt exactly. Its closing lines are *"Output
