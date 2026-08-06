@@ -26,6 +26,8 @@ TruthfulQA a judge. Producing a number for either would have meant inventing a s
 | `llama-2-13b-chat-gptq8` | concise | 0.172{m: code/projects/crowd-wisdom/results/summary.csv} | 174{m: code/projects/crowd-wisdom/results/summary.csv} / 275{m: code/projects/crowd-wisdom/results/summary.csv} | 1{m: code/projects/crowd-wisdom/results/summary.csv} | 899{m: code/projects/crowd-wisdom/results/summary.csv} ch |
 | `llama-2-13b-chat-gptq8` | simple | 0.208{m: code/projects/crowd-wisdom/results/summary.csv} | 173{m: code/projects/crowd-wisdom/results/summary.csv} / 275{m: code/projects/crowd-wisdom/results/summary.csv} | 2{m: code/projects/crowd-wisdom/results/summary.csv} | 1135{m: code/projects/crowd-wisdom/results/summary.csv} ch |
 
+{{chart: gpqa}}
+
 **The reversal.** On GPQA-Diamond the verbose arm beats the concise arm for `qwen3-8b` and
 `llama-2-13b-chat-gptq8`, and **loses** for `llama-3.1-8b-instruct`. The mediator is truncation:
 that model's count rises from 25{m: code/projects/crowd-wisdom/results/summary.csv} to 47{m: code/projects/crowd-wisdom/results/summary.csv} of 275{m: code/projects/crowd-wisdom/results/summary.csv} items between arms, so it
@@ -49,6 +51,8 @@ models by their verbosity, not by their reasoning.
 | `BTF-cot-concise` | no | concise | 0.607{m: code/projects/crowd-wisdom/results/summary.csv} | 0.535{m: code/projects/crowd-wisdom/results/summary.csv} | 0.168{m: code/projects/crowd-wisdom/results/summary.csv} | 0.286{m: code/projects/crowd-wisdom/results/summary.csv} | 0.125{m: code/projects/crowd-wisdom/results/summary.csv} | 0.3005{m: code/projects/crowd-wisdom/results/summary.csv} |
 | `cot-simple` | no | simple | 0.713{m: code/projects/crowd-wisdom/results/summary.csv} | 0.663{m: code/projects/crowd-wisdom/results/summary.csv} | 0.353{m: code/projects/crowd-wisdom/results/summary.csv} | 0.468{m: code/projects/crowd-wisdom/results/summary.csv} | 0.289{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2099{m: code/projects/crowd-wisdom/results/summary.csv} |
 | `cot-concise` | no | concise | 0.727{m: code/projects/crowd-wisdom/results/summary.csv} | 0.701{m: code/projects/crowd-wisdom/results/summary.csv} | 0.464{m: code/projects/crowd-wisdom/results/summary.csv} | 0.651{m: code/projects/crowd-wisdom/results/summary.csv} | 0.360{m: code/projects/crowd-wisdom/results/summary.csv} | 0.2078{m: code/projects/crowd-wisdom/results/summary.csv} |
+
+{{chart: auc}}
 
 Reference points: an always-half forecaster scores Brier 0.2500{m: code/projects/crowd-wisdom/results/summary.csv}; an always-base-rate
 forecaster 0.1444{m: code/projects/crowd-wisdom/results/summary.csv}; **the market price by itself 0.0609{m: code/projects/crowd-wisdom/results/summary.csv}** — better than every

@@ -9,7 +9,7 @@ S = "code/projects/crowd-wisdom/results/summary.csv"
 CHARTS = {
     "auc": svg_chart.bars(
         "forecast-auc-by-condition",
-        "Forecasting discrimination (ROC-AUC, mean over 3 models) — threshold-free and base-rate invariant",
+        "Forecasting discrimination (ROC-AUC, mean over three models) — threshold-free and base-rate invariant",
         [("FB-cot-simple · price shown", "0.831", S),
          ("FB-zeroshot · price shown", "0.825", S),
          ("FB-cot-concise · price shown", "0.807", S),
@@ -24,25 +24,27 @@ CHARTS = {
         maximum=1.0,
         highlight={"FB-cot-simple · price shown", "FB-zeroshot · price shown",
                    "FB-cot-concise · price shown"},
-        note=("Higher is better; <span class=\"num\" data-src=\"" + S + "\">0.5</span> is no discrimination. "
-              "The three highlighted bars are the only conditions that put the live market price in the "
-              "prompt. Every prompt WITHOUT it sits between chance and 0.70, whatever its reasoning style — "
-              "so the separation is information, not reasoning."),
+        note=("Higher is better; <span class=\"num\" data-src=\"" + S + "\">0.5</span> is no "
+              "discrimination. The three highlighted bars are the only conditions that put the live "
+              "market price in the prompt. Every prompt WITHOUT it sits between chance and "
+              "<span class=\"num\" data-src=\"" + S + "\">0.70</span>, whatever its reasoning "
+              "style — so the separation is information, not reasoning."),
     ),
     "gpqa": svg_chart.bars(
         "gpqa-cot-reversal",
         "GPQA-Diamond accuracy — the CoT arm that wins depends on the model",
         [("qwen3-8b · simple", "0.651", S),
          ("qwen3-8b · concise", "0.467", S),
-         ("llama-3.1-8b · concise", "0.341", S),
-         ("llama-2-13b · simple", "0.286", S),
-         ("llama-3.1-8b · simple", "0.250", S),
-         ("llama-2-13b · concise", "0.120", S)],
+         ("llama3.1-8b · concise", "0.341", S),
+         ("llama2-13b · simple", "0.286", S),
+         ("llama3.1-8b · simple", "0.250", S),
+         ("llama2-13b · concise", "0.120", S)],
         maximum=0.7,
-        highlight={"llama-3.1-8b · concise", "llama-3.1-8b · simple"},
-        note=("Verbose reasoning helps qwen3-8b and llama-2-13b and HURTS llama-3.1-8b (highlighted). Its "
-              "truncation rate nearly doubles under the verbose instruction, so it runs past its budget "
-              "before reaching an answer."),
+        highlight={"llama3.1-8b · concise", "llama3.1-8b · simple"},
+        note=("Verbose reasoning helps <code>qwen3-8b</code> and <code>llama-2-13b</code> and HURTS "
+              "<code>llama-3.1-8b</code> (highlighted). "
+              "Its truncation rate nearly doubles under the verbose instruction, so it runs past its "
+              "budget before reaching an answer."),
     ),
 }
 
