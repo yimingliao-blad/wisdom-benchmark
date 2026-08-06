@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>How three open models reason across six benchmarks — and what eleven forecasting prompts do to them</title><style>
+:root{--ink:#1b1b1b;--head:#11305a;--rule:#c3ccd8;--soft:#f5f7fa;--mut:#5a6a7d}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI','Liberation Sans',system-ui,Arial,sans-serif;color:var(--ink);
+     line-height:1.62;font-size:16px;background:#fff}
+.wrap{max-width:860px;margin:0 auto;padding:44px 22px 90px}
+h1{font-size:2rem;color:var(--head);border-bottom:3px solid var(--head);padding-bottom:.3em;margin:0 0 .2em}
+h2{font-size:1.35rem;color:var(--head);border-bottom:1px solid var(--rule);padding-bottom:.25em;
+   margin:2.4em 0 .7em}
+h3{font-size:1.08rem;color:#22415f;margin:1.6em 0 .5em}
+p{margin:.7em 0}
+ul,ol{margin:.5em 0 .9em 1.3em;padding:0}li{margin:.3em 0}
+code{font-family:'Cascadia Code','Liberation Mono',monospace;font-size:.88em;background:#eef1f6;
+     padding:1px 5px;border-radius:3px}
+pre{background:var(--soft);border:1px solid #d7dee8;border-left:4px solid var(--head);border-radius:4px;
+    padding:12px 14px;overflow-x:auto}
+pre code{background:none;padding:0;font-size:.82em;line-height:1.45}
+table{border-collapse:collapse;width:100%;margin:1em 0;font-size:.93rem;display:block;overflow-x:auto}
+th,td{border:1px solid #b6bfca;padding:6px 9px;text-align:left;vertical-align:top}
+th{background:#e7edf6;color:var(--head)}
+tr:nth-child(even) td{background:#f7f9fc}
+blockquote{border-left:4px solid #8aa0b6;background:#f2f5f8;margin:1em 0;padding:.6em 1.1em;color:#2a3a4a}
+hr{border:none;border-top:1px solid var(--rule);margin:2em 0}
+.subtitle{color:var(--mut);font-size:1.02rem;margin:.4em 0 1.4em}
+.meta{font-size:.85rem;color:var(--mut);border:1px solid var(--rule);border-radius:5px;padding:10px 14px;
+      background:#fbfcfe}
+/* a measurement always shows where it came from */
+.num{border-bottom:1px dotted #9bb0c7;cursor:help}
+.num[data-unsourced="true"]{background:#fdf1c8;border-bottom:1px solid #b58900}
+.unsourced-mark{color:#8a6d00;font-size:.68em;font-weight:700;margin-left:2px}
+/* claim state is a LABEL, not a shade */
+.claim{padding:1px 0}
+.state{display:inline-block;font-size:.66rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+       padding:1px 6px;border-radius:3px;margin-right:5px;vertical-align:1px}
+.claim[data-state="settled"] .state{background:#dff0e0;color:#1d6b2a;border:1px solid #9ccfa5}
+.claim[data-state="provisional"] .state{background:#fdf1c8;color:#8a6d00;border:1px solid #ddc169}
+.claim[data-state="open"] .state{background:#fbe3dd;color:#a4341f;border:1px solid #e2a496}
+.claim[data-state="pending"] .state{background:#eceff3;color:#5a6a7d;border:1px solid #c3ccd8}
+.claim[data-state="open"],.claim[data-state="pending"]{background:#fffaf9}
+.chart{margin:1.4em 0;border:1px solid var(--rule);border-radius:6px;padding:14px 16px;background:#fcfdff}
+.chart svg{display:block;margin-bottom:.4em}
+.chart-data{font-size:.86rem}
+.chart-data caption{text-align:left;color:var(--mut);font-size:.8rem;padding-bottom:.3em}
+.chart-data .src{font-family:monospace;font-size:.76rem;color:var(--mut);word-break:break-all}
+figcaption{color:var(--mut);font-size:.85rem;margin-top:.5em}
+.sec-state{float:right;font-size:.7rem}
+.withdrawn{text-decoration:line-through;color:#8b95a1}
+@media print{.wrap{max-width:none;padding:0}a{color:inherit}}
+</style></head><body><div class="wrap"><h1>How three open models reason across six benchmarks — and what eleven forecasting prompts do to them</h1>
+<p class="subtitle" data-numeric="identifier">crowd-wisdom step 3 — behavioural characterisation</p>
+<p class="meta"><strong>Evidence states</strong> — a claim marked <span class="claim" data-state="settled"><span class="state">settled</span></span> has passed external review; <span class="claim" data-state="provisional"><span class="state">provisional</span></span> has been reviewed but narrowed; <span class="claim" data-state="open"><span class="state">open</span></span> has had none. Every measurement carries the artifact it came from; hover to see it.<br><strong>Sections</strong> — premises: drafted, hypotheses: drafted, setup: drafted, code: drafted, intuition: drafted, results: drafted, conclusion: drafted.</p>
+<h2>Premises</h2>
+<p>What is assumed true before any of this work means anything, and what would falsify each.</p>
+<p>**P1 — A model's <em>reasoning trace</em> carries information its <em>answer</em> does not.** The whole design rests on this. If two models produced identical traces and differed only in accuracy, there would be nothing to fingerprint and clustering would be pointless. <em>Falsified if:</em> traces are indistinguishable across models once benchmark and item are controlled for.</p>
+<p><strong>P2 — The benchmarks are closed-book.</strong> No model gets web access, tool use, or retrieval. A question is answered from the prompt and the weights alone. <em>Falsified if:</em> any condition leaks external information into the prompt. <strong>This premise was violated and the violation became a finding</strong> — see Results §R1.</p>
+<p><strong>P3 — The answer parser reads what a careful human would read.</strong> Scores mean nothing if the extractor misreads the model. <em>Falsified if:</em> a hand-check of parsed answers against traces disagrees. Checked; the parser was rebuilt twice after real disagreements (markdown wrappers, a trailing LaTeX delimiter).</p>
+<p><strong>P4 — Truncation is not a wrong answer.</strong> A reply cut off mid-reasoning has no answer to score. <em>Falsified if:</em> truncated items were scored as incorrect, which would make a rambling model look wrong rather than unfinished.</p>
+<p><strong>P5 — The models are independent instruments here.</strong> They share pretraining data, so this is the weakest premise and the one the wider crowd-wisdom design exists to test rather than assume.</p>
+<h2>Hypotheses</h2>
+<p>Each is stated so it could come out false, and each did or did not.</p>
+<p><strong>H1 — Reasoning style changes measured capability.</strong> Predicts: accuracy differs between a "think step by step" prompt and a "necessary steps only" prompt on identical items. <strong>Supported, with a reversal</strong> — the direction is model-dependent.</p>
+<p><strong>H2 — A single reasoning prompt is best for all models.</strong> Predicts: whichever CoT style wins, wins everywhere. <strong>Falsified.</strong></p>
+<p><strong>H3 — More reasoning improves probabilistic forecasting.</strong> Predicts: CoT conditions beat the no-reasoning condition on ROC-AUC. <strong>Not supported</strong> — the dominant factor turned out to be information in the prompt, not reasoning.</p>
+<p><strong>H4 — Truncation is incidental.</strong> Predicts: truncation rates are low and similar across models and prompts, so they can be ignored. <strong>Falsified</strong> — truncation is differential by model and by prompt, and it mediates H1's reversal.</p>
+<p><strong>H5 — Published forecasting prompts transfer.</strong> Predicts: a prompt designed for a forecasting benchmark works on that benchmark's own question type. <strong>Not supported for one of the two.</strong></p>
+<h2>Experiment setup</h2>
+<h3>Models</h3>
+<table><thead><tr><th>model</th><th>engine</th><th>context</th><th>concurrency</th></tr></thead><tbody>
+<tr><td><code>qwen3-8b</code></td><td>vLLM</td><td><code>32768</code></td><td><code>8</code></td></tr>
+<tr><td><code>llama-3.1-8b-instruct</code></td><td>vLLM</td><td><code>32768</code></td><td><code>8</code></td></tr>
+<tr><td><code>llama-2-13b-chat-gptq8</code></td><td>vLLM</td><td><code>4096</code></td><td><code>8</code></td></tr>
+</tbody></table>
+<p>All at temperature <code>0</code>, seed <code>0</code>, on one local RTX <code>4090</code>. qwen3's <code>&lt;think&gt;</code> channel is switched <strong>off</strong> so it reasons visibly like the llamas, which have no hidden channel — a private reasoning channel would make the traces incomparable. Generation budgets are per model, not global: <code>llama-2-13b-chat-gptq8</code>'s <code>4096</code>-token <em>total</em> context is a hard ceiling, so its budget is sized to fit prompt plus output by construction.</p>
+<h3>Benchmarks</h3>
+<table><thead><tr><th>benchmark</th><th>measures</th><th>pool</th><th>drawn</th></tr></thead><tbody>
+<tr><td>GPQA-Diamond</td><td>scientific reasoning depth</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">198</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
+<tr><td><code>AIME-2025</code></td><td>long mathematical reasoning</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">30</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">25</span></td></tr>
+<tr><td>BBH</td><td>diverse reasoning styles</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">6511</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
+<tr><td>IFEval</td><td>instruction-following</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">541</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
+<tr><td>TruthfulQA</td><td>truthfulness & calibration</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">817</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
+<tr><td>GAIA validation</td><td>agentic planning</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">165</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
+<tr><td>ForecastBench</td><td>probabilistic forecasting</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">67</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">40</span></td></tr>
+</tbody></table>
+<p>Every draw is <strong>seeded random, never a prefix</strong> — all six files are ordered by domain, task or index, so a head-of-file slice would take one corner and report it as the benchmark. Prompts are capped at <strong><code>1,000</code>-character</strong> length so every item fits the smallest context; AIME yields <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">25</span> rather than <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span> because the whole exam is only <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">30</span> problems and <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">5</span> exceed the cap.</p>
+<h3>Conditions</h3>
+<p>Capability: <strong>two arms</strong> on identical items — <em>simple</em> ("Think step by step, showing your reasoning") and <em>concise</em> ("Reason through the necessary steps only ... not every detail or restatement"). Both end with the identical sentence requesting the final answer on the last line, so the parser target never changes. IFEval receives <strong>no appended instruction</strong>, because obeying its own instructions is the measurement.</p>
+<p>Forecasting: <strong>eleven conditions</strong> over the same questions, forming a factorial in the ForecastBench family of price {shown, hidden} by reasoning {none, simple, concise}, plus Bench-to-the-Future's prompt in three reasoning variants and two of our own.</p>
+<p>Total: <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2970</span> generations.</p>
+<h2>Sample code and example</h2>
+<p>The prompt builder, verbatim from <code>code/forecast_prompts.py</code>. Two of the eleven conditions are copied from published sources; the CoT variants change the output instruction and nothing else:</p>
+<pre><code>_SIMPLE  = &quot;Think step by step, showing your reasoning.&quot;
+_CONCISE = (&quot;Reason through the necessary steps only — show the key steps of your reasoning, &quot;
+            &quot;not every detail or restatement.&quot;)
+
+# ForecastBench: lift ONLY the &quot;do not output anything else&quot; ban, keep their asterisk answer format.
+_FB_BAN = &quot;Do not output anything else.\nAnswer: {{ Insert answer here }}\n&quot;
+assert _FB_BAN in FB, &quot;ForecastBench ban/answer tail not found — the source prompt changed&quot;
+
+def _fb_cot(style):
+    return FB.replace(_FB_KEEP + _FB_BAN,
+                      style + &quot;\nThen, on the last line, output your answer (a number between 0 and 1) &quot;
+                      &quot;with an asterisk at the beginning and end of the decimal, e.g. *0.35*\n&quot;)</code></pre>
+<p>The <code>assert</code> is deliberate: if either published prompt ever changes, the build fails loudly instead of silently drifting away from the source it claims to reproduce.</p>
+<h3>A worked example — one real GPQA item, one real trace</h3>
+<p>Question drawn by seeded sample (options shuffled per item, so the correct answer is not always A):</p>
+<pre><code>Find KE of product particles in, Pi(+) = mu(+) + nu
+here Pi(+) is stationary. Rest mass of Pi(+) &amp; mu(+) is 139.6 MeV &amp; 105.7 MeV respectively.
+
+A) 3.52 MeV, 20.8 MeV      B) 4.12 MeV, 29.8 MeV
+C) 2.84 MeV, 26.8 MeV      D) 7.2 MeV, 32.8 MeV
+
+Answer with the single letter A, B, C or D.
+
+Reason through the necessary steps only — show the key steps of your reasoning, not every detail
+or restatement. Then give your final answer on the last line, by itself, with no extra words.</code></pre>
+<p>Ground truth is <strong>B</strong>. The three models returned last lines <code>C</code>, a mid-sentence fragment (status TRUNCATED, so unscored), and <code>A) 3.52 MeV, 20.8 MeV</code>. Only the last shows why the parser cannot assume compliance: it must take the trailing standalone letter out of a verbose line. Full traces for all <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2970</span> generations are in <code>results/*_full.jsonl</code>; more worked examples in <code>docs/EXAMPLES.md</code>.</p>
+<h3>Extraction — what the renderer is given</h3>
+<p>The report you are reading is itself built by <code>render.py</code>, which refuses to emit HTML while any number lacks a declared class. Every figure below therefore carries its source.</p>
+<pre><code>def answer_lines(txt, k=6):
+    &quot;&quot;&quot;Last k non-empty lines, cleaned, LAST FIRST. qwen3 can end on a bare &#x27;$$&#x27; with the answer
+    on the line above, so the parser must walk back rather than trust the final line.&quot;&quot;&quot;
+    ls = [clean(l) for l in (txt or &quot;&quot;).strip().split(&quot;\n&quot;) if l.strip()]
+    return [l for l in ls[-k:][::-1] if l]</code></pre>
+<p>Substring matching was <strong>rejected</strong> for exact-answer benchmarks: with gold <code>False</code>, any trace containing the word "false" would score correct regardless of its conclusion — a checker that cannot fail.</p>
+<h2>Intuition — what to expect before looking</h2>
+<p><strong>Why two CoT styles at all.</strong> Telling a model to "show your reasoning" invites it to restate the question and re-derive steps it already has. On a hard problem that can spiral: one trace in this run reached <code>75,447</code> characters of the same step re-derived, and never produced an answer. Naming restatement as unwanted should shorten traces. Whether it <em>helps accuracy</em> is the open question — a physics problem may need the algebra written out, while a probability judgement may be harmed by talking yourself away from your first instinct.</p>
+<p><strong>Why the metric choice matters more than usual here.</strong> The forecasting set resolves YES on roughly one question in six. On such a set, <em>anything that outputs low numbers scores well</em> — a model that always answers "no" gets high accuracy and a respectable Brier score while discriminating nothing at all. So:</p>
+<ul>
+<li><strong>accuracy alone is misleading</strong> and is never reported here without recall beside it;</li>
+<li><strong>Brier</strong> conflates ranking with calibration, and is always shown against the always-<strong>base rate</strong></li>
+</ul>
+<p>  reference, not just against <code>0.5</code>;</p>
+<ul>
+<li><strong>ROC-AUC</strong> is threshold-free and base-rate invariant, which makes it the honest headline;</li>
+<li><strong>F1</strong> is reported because it ignores the true-negative mass that inflates accuracy on this set.</li>
+</ul>
+<p><strong>What a reader should predict.</strong> Bigger and newer models should read the questions better. Reasoning should help where the answer must be computed and matter less where it must be judged. And any prompt that hands the model extra information should beat any prompt that only changes how it thinks — which is exactly what happened, and is the finding that reframes everything else.</p>
+<h2>Results</h2>
+<p>All figures are counted from <code>summary.csv</code>, generated by <code>analyze_all.py</code> over <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2970</span> generations. No figure here has had external review.</p>
+<h3>R1 — capability: accuracy by benchmark and CoT arm</h3>
+<table><thead><tr><th>benchmark</th><th><code>qwen3-8b</code> con / sim</th><th><code>llama-3.1-8b</code> con / sim</th><th><code>llama-2-13b</code> con / sim</th></tr></thead><tbody>
+<tr><td>GPQA-Diamond</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.4667</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.6512</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.3415</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.25</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.12</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2857</span></td></tr>
+<tr><td><code>AIME-2025</code></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2778</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.25</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0</span></td></tr>
+<tr><td>BBH</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.8</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.875</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.449</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.5714</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.36</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.32</span></td></tr>
+<tr><td>IFEval</td><td>— / —</td><td>— / —</td><td>— / —</td></tr>
+<tr><td>TruthfulQA</td><td>— / —</td><td>— / —</td><td>— / —</td></tr>
+<tr><td>GAIA-validation</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.12</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0638</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1163</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0652</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.12</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.12</span></td></tr>
+</tbody></table>
+<p>IFEval and TruthfulQA are captured but <strong>unscored</strong> — IFEval needs its official verifier, TruthfulQA a judge. Producing a number for either would have meant inventing a scorer.</p>
+<table><thead><tr><th>model</th><th>arm</th><th>accuracy</th><th>scored / asked</th><th>truncated</th><th>median trace</th></tr></thead><tbody>
+<tr><td><code>qwen3-8b</code></td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.442</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">163</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">12</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">668</span> ch</td></tr>
+<tr><td><code>qwen3-8b</code></td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.500</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">154</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">21</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">1536</span> ch</td></tr>
+<tr><td><code>llama-3.1-8b-instruct</code></td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.272</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">151</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">25</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">968</span> ch</td></tr>
+<tr><td><code>llama-3.1-8b-instruct</code></td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.291</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">134</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">47</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">1422</span> ch</td></tr>
+<tr><td><code>llama-2-13b-chat-gptq8</code></td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.172</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">174</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">1</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">899</span> ch</td></tr>
+<tr><td><code>llama-2-13b-chat-gptq8</code></td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.208</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">173</span> / <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">1135</span> ch</td></tr>
+</tbody></table>
+<p><strong>The reversal.</strong> On GPQA-Diamond the verbose arm beats the concise arm for <code>qwen3-8b</code> and <code>llama-2-13b-chat-gptq8</code>, and <strong>loses</strong> for <code>llama-3.1-8b-instruct</code>. The mediator is truncation: that model's count rises from <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">25</span> to <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">47</span> of <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">275</span> items between arms, so it talks past its budget and never reaches an answer. A single fixed prompt would therefore penalise models by their verbosity, not by their reasoning.</p>
+<h3>R2 — forecasting: every metric, by prompt condition</h3>
+<p><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">40</span> resolved binary questions, base rate <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.175</span> YES. Means over the three models.</p>
+<table><thead><tr><th>condition</th><th>price</th><th>reasoning</th><th>accuracy</th><th>ROC-AUC</th><th>F1</th><th>recall</th><th>precision</th><th>Brier</th></tr></thead><tbody>
+<tr><td><code>FBnp-zeroshot</code></td><td>no</td><td>none</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.767</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.582</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.309</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.286</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.483</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1836</span></td></tr>
+<tr><td><code>FBnp-cot-simple</code></td><td>no</td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.783</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.565</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.302</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.286</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.389</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1831</span></td></tr>
+<tr><td><code>FBnp-cot-concise</code></td><td>no</td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.767</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.636</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.266</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.238</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.433</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1754</span></td></tr>
+<tr><td><code>FB-zeroshot</code></td><td><strong>YES</strong></td><td>none</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.842</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.825</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.507</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.476</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.569</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1098</span></td></tr>
+<tr><td><code>FB-cot-simple</code></td><td><strong>YES</strong></td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.857</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.831</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.533</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.476</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.656</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1198</span></td></tr>
+<tr><td><code>FB-cot-concise</code></td><td><strong>YES</strong></td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.867</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.807</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.399</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.333</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.750</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1139</span></td></tr>
+<tr><td><code>BTF-noevidence</code></td><td>no</td><td>(a)-(e)</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.659</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.550</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.232</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.206</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.267</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2584</span></td></tr>
+<tr><td><code>BTF-cot-simple</code></td><td>no</td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.655</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.554</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.151</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.248</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.129</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2983</span></td></tr>
+<tr><td><code>BTF-cot-concise</code></td><td>no</td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.607</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.535</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.168</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.286</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.125</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.3005</span></td></tr>
+<tr><td><code>cot-simple</code></td><td>no</td><td>simple</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.713</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.663</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.353</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.468</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.289</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2099</span></td></tr>
+<tr><td><code>cot-concise</code></td><td>no</td><td>concise</td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.727</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.701</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.464</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.651</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.360</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2078</span></td></tr>
+</tbody></table>
+<p>Reference points: an always-half forecaster scores Brier <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.2500</span>; an always-base-rate forecaster <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1444</span>; <strong>the market price by itself <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.0609</span></strong> — better than every model in every condition.</p>
+<p><strong>The finding that reframes the rest.</strong> The three <code>FB-<em></code> conditions include the live prediction-market price in the prompt. <code>FBnp-</em></code> are the same prompt without that one field. Removing it moves mean ROC-AUC from <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.821</span> to <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.594</span> — close to the <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.5</span> no-discrimination floor. So almost all apparent forecasting skill was the models reading a number out of the prompt, and even then they score worse than that number alone. <strong>Premise P2 was violated by our own condition design</strong>, and the violation is the result.</p>
+<p><strong>Recall and F1 expose what accuracy hides.</strong> <code>cot-concise</code> reaches recall <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.651</span> on precision <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.360</span>; the FB conditions invert it — precision <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.750</span> on recall <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.333</span>. Accuracy ranks them almost identically because true negatives dominate a set that is one-sixth YES.</p>
+<h3>R3 — a published prompt that does not transfer</h3>
+<p>Bench-to-the-Future's prompt scores worst on every metric, with ROC-AUC at chance. On <code>llama-2-13b-chat-gptq8</code> it breaks outright: parse rates of <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.525</span>, <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.7</span> and <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.675</span> across its three variants, and AUC of <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.375</span> — below chance. Its roughly four thousand characters of heuristics leave a small-context model no room, and its advice to think twice before forecasting under three percent inflates probabilities on a set where five in six questions resolve NO. BTF's own paper ranks this architecture as its weakest, so this reproduces their finding rather than contradicting it.</p>
+<h3>R4 — instruction compliance as a fingerprint</h3>
+<p>Asked for a bare final answer with no extra words, the models comply on <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.38</span>, <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.28</span> and <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.1</span> of completed traces. The trait is stable across benchmarks and costs nothing to collect, which makes it a usable discriminator — and a warning that no output-only parser may assume the instruction was obeyed.</p>
+<h2>Conclusion</h2>
+<h3>What the results support</h3>
+<p><strong>A single reasoning prompt cannot be chosen for a mixed model set.</strong> Verbose CoT beats concise on GPQA-Diamond for two of three models and loses for the third, and the mediator is whether the model stops talking before its budget runs out. For the crowd-wisdom design this matters directly: fixing one prompt would penalise verbose models, and that penalty would then enter the behavioural representation looking like a real difference between models rather than an artefact of our choice.</p>
+<p><strong>Information in the prompt swamps reasoning style.</strong> Removing one field — the market price — costs more ROC-AUC than every reasoning manipulation combined. Any future claim that a prompt "improves forecasting" has to rule this out first.</p>
+<p><strong>Instruction compliance and truncation are cheap, stable, discriminating features.</strong> They separate these three models more reliably than accuracy does, and they cost nothing extra to collect.</p>
+<h3>What the results do not support</h3>
+<p>Three claims are <strong>not supported</strong> by this data.</p>
+<p><strong>Nothing here says these models can forecast.</strong> Without market information their ROC-AUC sits near the no-discrimination floor. The apparent competence in the headline conditions was borrowed from the prompt.</p>
+<p><strong>Nothing here tests the crowd-wisdom hypothesis.</strong> Three models cannot be clustered; the elbow and silhouette methods in the design need far more points. This work produces the substrate — <code>2,970</code> traces with answers, ground truth and verdicts — not the finding.</p>
+<p><strong>No number here is comparable to a published leaderboard.</strong> BBH ran zero-shot rather than the canonical three-shot chain-of-thought, GAIA ran text-only so its attachment questions were unanswerable by construction, and IFEval and TruthfulQA are unscored.</p>
+<h3>What is still open</h3>
+<ol>
+<li><strong><code>BTF-3</code> is downloaded and unrun</strong> — <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">1515</span></li>
+</ol>
+<p>   resolved binary questions carrying their own <code>present_date</code> and a per-question published expert    forecast. That last column is what the first hypothesis needs to compare a committee against an expert, and it    is the right substrate for BTF's prompt.</p>
+<ol>
+<li><strong>IFEval and TruthfulQA scoring</strong>, which would convert <code>100</code> dead rows per model per arm into two of the</li>
+</ol>
+<p>   nine behaviour features the design calls for.</p>
+<ol>
+<li><strong>The roster.</strong> Steps <code>4</code> through <code>8</code> need <code>20</code> to <code>30</code> models. Measured throughput says that is roughly eight</li>
+</ol>
+<p>   hours of local compute for the 8B class — the constraint is model access and API budget, not GPU time.</p>
+<ol>
+<li><strong>Sample size.</strong> Forty forecasting questions and about fifty per capability benchmark. Several patterns</li>
+</ol>
+<p>   in this work reversed when a partial batch finished, so differences of a few points here should not be    treated as real.</p></div></body></html>

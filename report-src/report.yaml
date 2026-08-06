@@ -1,0 +1,50 @@
+title: "How three open models reason across six benchmarks — and what eleven forecasting prompts do to them"
+audience_profile: technical
+subject: "crowd-wisdom step 3 — behavioural characterisation"
+
+# Read-only. Every measurement in this report cites one of these.
+evidence_roots:
+  - code/projects/crowd-wisdom/results/
+  - code/projects/crowd-wisdom/survey/
+
+# State authority sits outside the author. These ceilings come from how each source was produced.
+approvals:
+  summary.csv:
+    max_claim_state: provisional
+    basis: "machine-generated from 2,970 runs by analyze_all.py; NO external review of the reading"
+  EXAMPLES.md:
+    max_claim_state: provisional
+    basis: "generated from the same run artifacts; examples verified by inspection, not by a second party"
+  DATASETS.md:
+    max_claim_state: settled
+    basis: "every dataset count verified by counting the downloaded file, twice contradicting search summaries"
+
+sections:
+  - id: premises
+    path: sections/01-premises.md
+    state: drafted
+    requires: ["closed", "falsif"]
+  - id: hypotheses
+    path: sections/02-hypotheses.md
+    state: drafted
+    requires: ["ROC-AUC", "truncation"]
+  - id: setup
+    path: sections/03-setup.md
+    state: drafted
+    requires: ["seeded", "1,000"]
+  - id: code
+    path: sections/04-code.md
+    state: drafted
+    requires: ["render", "worked example"]
+  - id: intuition
+    path: sections/05-intuition.md
+    state: drafted
+    requires: ["base rate"]
+  - id: results
+    path: sections/06-results.md
+    state: drafted
+    requires: ["F1", "recall", "AUC", "accuracy"]
+  - id: conclusion
+    path: sections/07-conclusion.md
+    state: drafted
+    requires: ["not supported", "open"]
