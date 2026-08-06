@@ -1,0 +1,10 @@
+{
+  "n_sampled": 40,
+  "n_with_expert_forecast": 39,
+  "scale_note": "source column is 0-100 despite the name; divided by 100 here",
+  "expert_brier": 0.1682,
+  "expert_roc_auc": 0.8241,
+  "expert_accuracy": 0.8205,
+  "base_rate": 0.4615,
+  "base_rate_only_brier": 0.2485
+}
