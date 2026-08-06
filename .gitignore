@@ -1,0 +1,5 @@
+data/
+repos/
+papers/
+__pycache__/
+*.pyc
