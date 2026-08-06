@@ -65,28 +65,81 @@ figcaption{color:var(--mut);font-size:.85rem;margin-top:.5em}
 <p><strong>H4 — Truncation is incidental.</strong> Predicts: truncation rates are low and similar across models and prompts, so they can be ignored. <strong>Falsified</strong> — truncation is differential by model and by prompt, and it mediates H1's reversal.</p>
 <p><strong>H5 — Published forecasting prompts transfer.</strong> Predicts: a prompt designed for a forecasting benchmark works on that benchmark's own question type. <strong>Not supported for one of the two.</strong></p>
 <h2>Experiment setup</h2>
+<h3>Two families, two prompt architectures — they are NOT the same</h3>
+<p>This is the distinction that governs everything below. The six capability benchmarks and the two forecasting benchmarks are asked in structurally different ways, and comparing a number across the families would be comparing two experiments.</p>
+<table><thead><tr><th></th><th>capability family</th><th>forecasting family</th></tr></thead><tbody>
+<tr><td>benchmarks</td><td>GPQA-Diamond, AIME, BBH, IFEval, TruthfulQA, GAIA</td><td>ForecastBench, <code>BTF-3</code></td></tr>
+<tr><td>prompt origin</td><td><strong>ours</strong> — a thin wrapper we wrote</td><td><strong>published</strong> — the benchmark authors' own templates</td></tr>
+<tr><td>structure</td><td>the benchmark's question text, then one instruction</td><td>fielded: question / background / resolution criteria / dates</td></tr>
+<tr><td>answer wanted</td><td>a discrete answer (letter, integer, string)</td><td>a <strong>probability</strong> between zero and one</td></tr>
+<tr><td>default output rule</td><td>reasoning always requested</td><td>ForecastBench <strong>forbids</strong> reasoning by default</td></tr>
+<tr><td>scoring</td><td>accuracy against gold</td><td>Brier, ROC-AUC, F1, recall against a resolved outcome</td></tr>
+<tr><td>conditions run</td><td><code>2</code></td><td><code>11</code></td></tr>
+</tbody></table>
 <h3>Models</h3>
 <table><thead><tr><th>model</th><th>engine</th><th>context</th><th>concurrency</th></tr></thead><tbody>
 <tr><td><code>qwen3-8b</code></td><td>vLLM</td><td><code>32768</code></td><td><code>8</code></td></tr>
 <tr><td><code>llama-3.1-8b-instruct</code></td><td>vLLM</td><td><code>32768</code></td><td><code>8</code></td></tr>
 <tr><td><code>llama-2-13b-chat-gptq8</code></td><td>vLLM</td><td><code>4096</code></td><td><code>8</code></td></tr>
 </tbody></table>
-<p>All at temperature <code>0</code>, seed <code>0</code>, on one local RTX <code>4090</code>. qwen3's <code>&lt;think&gt;</code> channel is switched <strong>off</strong> so it reasons visibly like the llamas, which have no hidden channel — a private reasoning channel would make the traces incomparable. Generation budgets are per model, not global: <code>llama-2-13b-chat-gptq8</code>'s <code>4096</code>-token <em>total</em> context is a hard ceiling, so its budget is sized to fit prompt plus output by construction.</p>
-<h3>Benchmarks</h3>
-<table><thead><tr><th>benchmark</th><th>measures</th><th>pool</th><th>drawn</th></tr></thead><tbody>
-<tr><td>GPQA-Diamond</td><td>scientific reasoning depth</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">198</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
-<tr><td><code>AIME-2025</code></td><td>long mathematical reasoning</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">30</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">25</span></td></tr>
-<tr><td>BBH</td><td>diverse reasoning styles</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">6511</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
-<tr><td>IFEval</td><td>instruction-following</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">541</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
-<tr><td>TruthfulQA</td><td>truthfulness & calibration</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">817</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
-<tr><td>GAIA validation</td><td>agentic planning</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">165</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span></td></tr>
-<tr><td>ForecastBench</td><td>probabilistic forecasting</td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">67</span></td><td><span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">40</span></td></tr>
+<p>Temperature <code>0</code>, seed <code>0</code>, one local RTX <code>4090</code>. qwen3's <code>&lt;think&gt;</code> channel is switched <strong>off</strong> so it reasons visibly like the llamas, which have no hidden channel — a private reasoning channel would make the traces incomparable. Budgets are per model: <code>llama-2-13b-chat-gptq8</code>'s <code>4096</code>-token <em>total</em> context is a hard ceiling, so its generation budget is sized per item to fit prompt plus output.</p>
+<h3>Family A — the capability wrapper (two prompts)</h3>
+<p>One wrapper, appended to the benchmark's own question text. The two arms differ in a single sentence; the answer-format sentence is byte-identical in both, so the parser target never changes.</p>
+<pre><code>&lt;benchmark question&gt;
+
+[ARM 1 — simple]   Think step by step, showing your reasoning.
+[ARM 2 — concise]  Reason through the necessary steps only — show the key steps of your
+                   reasoning, not every detail or restatement.
+
+Then give your final answer on the last line, by itself, with no extra words.</code></pre>
+<p><strong>IFEval receives no appended instruction at all.</strong> Its prompts carry their own constraints (no commas, word counts, N highlighted sections) and obeying them <em>is</em> the measurement; appending a reasoning directive would add a conflicting instruction to the thing being scored.</p>
+<h3>Family B — the forecasting prompt catalogue (eleven conditions)</h3>
+<p>Two published templates, each in three reasoning variants, plus our own wrapper, plus a no-price control. Every one ends with a parseable probability.</p>
+<table><thead><tr><th>condition</th><th>origin</th><th>market price</th><th>reasoning</th><th>answer format</th></tr></thead><tbody>
+<tr><td><code>FB-zeroshot</code></td><td>ForecastBench, <strong>verbatim</strong></td><td><strong>shown</strong></td><td><strong>forbidden</strong></td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>FB-cot-simple</code></td><td>ForecastBench + our CoT</td><td><strong>shown</strong></td><td>step by step</td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>FB-cot-concise</code></td><td>ForecastBench + our CoT</td><td><strong>shown</strong></td><td>key steps only</td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>FBnp-zeroshot</code></td><td>ForecastBench, plain variant</td><td>hidden</td><td>forbidden</td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>FBnp-cot-simple</code></td><td>plain variant + our CoT</td><td>hidden</td><td>step by step</td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>FBnp-cot-concise</code></td><td>plain variant + our CoT</td><td>hidden</td><td>key steps only</td><td><code><em>0.35</em></code></td></tr>
+<tr><td><code>BTF-noevidence</code></td><td>Bench-to-the-Future, <strong>verbatim</strong></td><td>n/a</td><td>its own (a)–(e) steps</td><td>bare probability</td></tr>
+<tr><td><code>BTF-cot-simple</code></td><td>BTF + our CoT</td><td>n/a</td><td>(a)–(e) + step by step</td><td>bare probability</td></tr>
+<tr><td><code>BTF-cot-concise</code></td><td>BTF + our CoT</td><td>n/a</td><td>(a)–(e) + key steps</td><td>bare probability</td></tr>
+<tr><td><code>cot-simple</code></td><td><strong>ours</strong></td><td>hidden</td><td>step by step</td><td>bare probability</td></tr>
+<tr><td><code>cot-concise</code></td><td><strong>ours</strong></td><td>hidden</td><td>key steps only</td><td>bare probability</td></tr>
 </tbody></table>
-<p>Every draw is <strong>seeded random, never a prefix</strong> — all six files are ordered by domain, task or index, so a head-of-file slice would take one corner and report it as the benchmark. Prompts are capped at <strong><code>1,000</code>-character</strong> length so every item fits the smallest context; AIME yields <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">25</span> rather than <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">50</span> because the whole exam is only <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">30</span> problems and <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">5</span> exceed the cap.</p>
-<h3>Conditions</h3>
-<p>Capability: <strong>two arms</strong> on identical items — <em>simple</em> ("Think step by step, showing your reasoning") and <em>concise</em> ("Reason through the necessary steps only ... not every detail or restatement"). Both end with the identical sentence requesting the final answer on the last line, so the parser target never changes. IFEval receives <strong>no appended instruction</strong>, because obeying its own instructions is the measurement.</p>
-<p>Forecasting: <strong>eleven conditions</strong> over the same questions, forming a factorial in the ForecastBench family of price {shown, hidden} by reasoning {none, simple, concise}, plus Bench-to-the-Future's prompt in three reasoning variants and two of our own.</p>
-<p>Total: <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2970</span> generations.</p>
+<p><strong>What each one is for.</strong></p>
+<ul>
+<li><strong><code>FB-zeroshot</code></strong> reproduces ForecastBench's shipped prompt exactly. Its closing lines are *"Output</li>
+</ul>
+<p>  your answer ... with an asterisk at the beginning and end of the decimal. Do not output anything   else."* That ban produces a <code>7</code>-character reply — enough to score, useless as a behavioural trace.</p>
+<ul>
+<li>**<code>FB-cot-*</code><strong> lift </strong>only** that ban and insert a reasoning instruction, keeping the asterisk answer</li>
+</ul>
+<p>  contract. This is the change that turns a bare number into a trajectory while staying scoreable.</p>
+<ul>
+<li>**<code>FBnp-*</code>** are the same three with the market-price field removed. ForecastBench ships both a</li>
+</ul>
+<p>  with-price and a plain market template; this pair is the control that separates <em>information in the   prompt</em> from <em>reasoning style</em>, and it is the single most important comparison in this report.</p>
+<ul>
+<li>**<code>BTF-*</code>** reproduce Bench-to-the-Future's <code>Appendix A.1</code> prompt — roughly four thousand characters of</li>
+</ul>
+<p>  forecasting heuristics (base rates, status quo, scope, a pre-mortem, <em>"think twice before forecasting   less than three percent"</em>) followed by five mandatory reasoning steps (a) through (e). Its no-evidence   variant leaves the <code>&lt;research&gt;</code> block empty, which is BTF's own baseline architecture for a model   without web access.</p>
+<ul>
+<li>**<code>cot-*</code>** are our own minimal wrapper, matching Family A's instruction so the two families share one</li>
+</ul>
+<p>  reasoning manipulation.</p>
+<h3>What is specific to the forecasting data</h3>
+<p>Five things differ from the capability benchmarks, and each changes how a number must be read.</p>
+<p><strong>First — The answer is a probability, not a choice.</strong> So accuracy needs an arbitrary threshold, and ROC-AUC — threshold-free and base-rate invariant — becomes the honest headline.</p>
+<p><strong>Second — The questions carry fielded context.</strong> Each has a <em>background</em> and explicit <em>resolution criteria</em>. On <code>BTF-3</code> these are substantial: background is a median <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">2122</span> characters and resolution criteria <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">1453</span>, against a question stem of only <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">125</span>. Most of the prompt is context, not question.</p>
+<p><strong>Third — There is a date the model must reason from.</strong> ForecastBench supplies <em>Today's Date</em>; <code>BTF-3</code> supplies <code>present_date</code>, the pastcasting anchor that makes a resolved question answerable as though it were still open.</p>
+<p><strong>Fourth — Base rates are skewed, and differently in each set.</strong> The ForecastBench sample resolves YES on <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">0.175</span> of questions; the <code>BTF-3</code> sample on <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">0.45</span>. The first makes accuracy nearly meaningless — always answering NO scores well — while the second is balanced enough for accuracy and F1 to be readable. The same metric means different things across the two.</p>
+<p><strong>Fifth — One of them ships an expert baseline.</strong> <code>BTF-3</code> carries <code>sota_forecast_probability</code>, a published per-question forecast. That is a real comparator for the crowd-wisdom question of whether a committee beats an expert; ForecastBench's equivalent is its separate human superforecaster set, not used here.</p>
+<h3>Sampling</h3>
+<p>Capability prompts are capped at <strong><code>1,000</code>-character</strong> length so every item fits the smallest model's context. Every draw is <strong>seeded random, never a prefix</strong> — all source files are ordered by domain, task, index or level, so a head-of-file slice would take one corner and report it as the benchmark.</p>
+<p><strong>Fields are never truncated.</strong> Where a prompt would not fit a model's context, the <em>question</em> is excluded from eligibility rather than shortened — shortening would silently change what the benchmark asks. On <code>BTF-3</code> that costs coverage honestly: <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">259</span> of <span class="num" data-src="code/projects/crowd-wisdom/survey/DATASETS.md">1515</span> questions have fields small enough to pair with BTF's own long template inside the smallest model's context.</p>
+<p>Total generations: <span class="num" data-src="code/projects/crowd-wisdom/results/summary.csv">2970</span> in the capability and ForecastBench families, plus the <code>BTF-3</code> run.</p>
 <h2>Sample code and example</h2>
 <p>The prompt builder, verbatim from <code>code/forecast_prompts.py</code>. Two of the eleven conditions are copied from published sources; the CoT variants change the output instruction and nothing else:</p>
 <pre><code>_SIMPLE  = &quot;Think step by step, showing your reasoning.&quot;
