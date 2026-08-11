@@ -88,13 +88,42 @@ results/openrouter/   records.jsonl.gz         every scored row, one per call, g
                       gap_analysis.json        planned vs answered vs unusable, per arm
 ```
 
-Run it: `python3 code/openrouter/run_openrouter.py --bench futurex --items <items.json>
---models code/openrouter/survey/roster_25.json --max-calls N --max-spend D`.
+### Running it
+
+**Step 1 — fetch the data.** The corpora are not committed (third-party; BTF-3 is CC-BY-NC-4.0), so
+they are downloaded and the item files rebuilt:
+
+```bash
+cd code/openrouter
+./fetch_data.sh
+```
+
+It pulls FutureX-Past (`futurex-ai/Futurex-Past`, Apache-2.0) and BTF-3 (`BTF-2/BTF-3`,
+CC-BY-NC-4.0) **pinned to a commit and sha256-verified**, re-runs the seeded draws to rebuild the
+exact 110-item corpora, restores the run directories from the committed
+`results/openrouter/*.jsonl.gz`, and then checks the rebuild is byte-identical to what the published
+records were bought against — halting if it is not.
+
+The pin matters: **the FutureX parquet changed upstream after these runs** (252,921 → 257,915 bytes).
+An unpinned fetch would silently give you a different pool and a different sample.
+
+**Step 2 — run the tests** (offline, no spend):
+
+```bash
+python3 -m unittest discover -p 'test_*.py'      # 452 of 454 pass from a fresh clone
+```
+
+The 2 that fail drive a planning-document generator against a file in a private repo; see
+[`code/openrouter/TESTING.md`](code/openrouter/TESTING.md).
+
+**Step 3 — run the benchmark** (this costs money):
+
+```bash
+python3 run_openrouter.py --bench futurex --items runs/fx_items_110.json \
+  --models survey/roster_25.json --max-calls N --max-spend D
+```
+
 Both budget flags are **required** — it is a paid API and the caps are checked before the loop.
-Tests are offline and free, but **206 of 312 pass standalone** — the rest need the benchmark item
-corpora, which are not committed (third-party, and BTF-3 is CC-BY-NC-4.0). See
-[`code/openrouter/TESTING.md`](code/openrouter/TESTING.md) for exactly which files are required and
-which 20 test modules run without them.
 
 ## Layout
 

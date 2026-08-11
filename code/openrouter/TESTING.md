@@ -1,58 +1,65 @@
 # Testing the phase-2 harness
 
-**Measured on a clean checkout, 2026-08-11: `312 tests ran, 206 passed, 4 failed, 100 errored, 2 skipped`.**
-
-Every one of the 106 failures and errors is a **missing data file**, not a code defect — 93 raise
-`FileNotFoundError` outright, and the 4 assertion failures are tests whose tool correctly HALTed with
-*"<corpus> does not exist — a stage cannot be scoped without its item corpus, and guessing its size
-would defeat the point"*. The harness fails loud on absent data by design; the tests then see a halt
-message instead of the output they asserted.
-
-## Why the data is not in the repo
-
-Consistent with the phase-1 policy in the top-level README: the benchmark corpora are third-party and
-variously licensed. **BTF-3 is CC-BY-NC-4.0.** The item files contain the benchmark prompts and their
-ground truth, so they are fetched, never committed.
-
-## What the tests need
-
-| path (relative to `code/openrouter/`) | what it is | size |
-|---|---|---|
-| `runs/fx_smoke4.json` | 4-item FutureX smoke slice | 8 K |
-| `runs/fx_items_110.json` | the 110 frozen FutureX-Past items | 132 K |
-| `runs/btf3_items_110.json` | the 110 frozen BTF-3 items | 788 K |
-| `runs/_frozen_fxgate_2026-08-08/` | frozen 1,131-record snapshot + its manifest and items | ~5 M |
-| `runs/or_futurex_fxgate/`, `runs/or_btf3_*/` | the live run directories | ~109 M |
-
-The published `results/openrouter/*/records.jsonl.gz` and `manifest.json` **are** the run artifacts for
-the last two rows — decompress them into `runs/<tag>/records.jsonl` to satisfy the tests that read
-records. The item corpora must come from the sources in `docs/DATASETS.md`.
-
-## The 20 modules that pass with no data at all
-
-```
-test_account_fault     test_analyze          test_any_model_list   test_bench_formats
-test_budget_policy     test_claim_gate       test_completeness     test_concurrency
-test_corpus_mining     test_finalize         test_followup_select  test_infra_faults
-test_provenance        test_quarantine       test_response_schema  test_roster_build
-test_smoke_acceptance  test_spend            test_transport        test_wiring
-```
-
 ```bash
 cd code/openrouter
-python3 -m unittest test_account_fault test_analyze test_any_model_list test_bench_formats \
-  test_budget_policy test_claim_gate test_completeness test_concurrency test_corpus_mining \
-  test_finalize test_followup_select test_infra_faults test_provenance test_quarantine \
-  test_response_schema test_roster_build test_smoke_acceptance test_spend test_transport test_wiring
+./fetch_data.sh                              # downloads the corpora, rebuilds the item files
+python3 -m unittest discover -p 'test_*.py'  # 454 tests, offline, no spend
 ```
 
-These cover the parts worth checking without spending money: the infrastructure-fault policy (retry 3,
-pause the model, halt only on account faults), the result/non-result boundary, budget enforcement,
-roster building from a bare model list, and quarantine behaviour. All network calls are stubbed.
+**Measured on a simulated fresh clone, 2026-08-11: `Ran 454 tests … FAILED (failures=2)` — 452 pass.**
 
-## Five modules that fail at import
+The 2 that fail are `test_the_plans_scope_block_matches_the_current_roster` and
+`test_it_covers_EVERY_arm_not_just_the_one_last_rebuilt`. Both drive `survey/plan_scope.py` against
+`../../../plans/openrouter-output-integrity/plan.md`, a planning document in a private repo that is
+not part of this project. **They cannot pass here and are not expected to** — `plan_scope.py` is a
+dev-tree tool that regenerates a scope block in that plan; it is published for completeness because
+`roster_build.py` and the roster data are the interesting half.
 
-`test_item_validate`, `test_manifest`, `test_persistence`, `test_schedule`, `test_supersession` read a
-fixture at module scope, so they raise before any test runs. That is a fixture-loading style, not a
-packaging problem — they pass in the development tree where `runs/` is populated (454 tests green there
-on 2026-08-10).
+Without `fetch_data.sh` the numbers are much worse — `312 ran, 206 passed, 100 errored` — because
+most tests read a benchmark corpus or a run directory. Every one of those errors is an absent file,
+not a code defect; the harness fails loud on missing data by design.
+
+## What `fetch_data.sh` does
+
+1. **Downloads two corpora, pinned to a commit and sha256-verified.**
+
+   | dataset | source | revision | licence |
+   |---|---|---|---|
+   | FutureX-Past | `futurex-ai/Futurex-Past` | `3c2e396…` | Apache-2.0 |
+   | BTF-3 (binary) | `BTF-2/BTF-3` | `ad5a216…` | **CC-BY-NC-4.0** |
+
+   **The pin is not ceremony.** The FutureX parquet changed upstream after these runs — 252,921 bytes
+   when we drew the sample, 257,915 as of 2026-08-11. An unpinned fetch gives a different pool and
+   therefore a different 110-item draw, which would not correspond to the published records. The
+   script halts on any sha256 mismatch rather than continuing with the wrong data.
+
+2. **Rebuilds the item corpora** with the seeded draws (`DRAW_SEED = 20260808`) and the contamination
+   filter, via `build_futurex_corpus.py` and `build_btf3_corpus.py`. BTF-3's draw prints its
+   stratum-balance gate; FutureX filters to post-anchor items *before* drawing.
+
+3. **Restores the run directories** by decompressing `results/openrouter/*/records.jsonl.gz` — those
+   are our own outputs and *are* committed, so no download is needed for them.
+
+4. **Verifies the rebuild is byte-identical** to the corpora the published records were bought
+   against, by sha256:
+
+   ```
+   OK   runs/fx_items_110.json    14b03da5a8d2d892b756
+   OK   runs/btf3_items_110.json  1bab93361f198e53ee5d
+   OK   runs/fx_smoke4.json       e0af581a415e90d95cc6
+   ```
+
+   If any differs the script **halts** and says not to compare new calls against the published data.
+   This check earned its place during development: it caught a rebuilt fixture that parsed equal but
+   serialised differently, which would have produced a subtly different file.
+
+## Why the corpora are not committed
+
+Third-party and variously licensed — **BTF-3 is CC-BY-NC-4.0** — and the item files contain the
+benchmark prompts with their ground truth. Same policy as phase 1's `code/download_data.sh`.
+Our own run output *is* committed, gzipped, under `results/openrouter/`.
+
+## Requirements
+
+`curl`, `python3`, `pandas`, `pyarrow`. No Hugging Face account or token: both datasets are public
+and are fetched over plain HTTPS from the pinned revision.

@@ -1,0 +1,684 @@
+{
+ "manifest_id": "b460e0844719625e",
+ "supersedes": null,
+ "reason": null,
+ "bench": "futurex",
+ "arms": [
+  "original"
+ ],
+ "anchor": "2026-02-16",
+ "roster_hash": "2bed49a5bb13b1ff",
+ "items_hash": "e5b69d60b33e4fa5",
+ "n_models": 37,
+ "n_items": 2,
+ "n_arms": 1,
+ "n_units": 74,
+ "units": [
+  {
+   "unit_id": "1acf9f29b196a2fd",
+   "model": "anthropic/claude-opus-4.8",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "49d5cc9ba3df0c64",
+   "model": "anthropic/claude-opus-4.8",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "9c78135945e3d644",
+   "model": "anthropic/claude-sonnet-4.6",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "648e73afea73c862",
+   "model": "anthropic/claude-sonnet-4.6",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "8e64ca6ca212c9c7",
+   "model": "anthropic/claude-sonnet-5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "9385b3bf770ab09f",
+   "model": "anthropic/claude-sonnet-5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "f88d05645eda9e3f",
+   "model": "deepseek/deepseek-chat-v3.1",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "be3192a19e50955e",
+   "model": "deepseek/deepseek-chat-v3.1",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "e16c6901bf978d21",
+   "model": "deepseek/deepseek-v3.1-terminus",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "9f255347ebaafac3",
+   "model": "deepseek/deepseek-v3.1-terminus",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "0f714a615748fcbd",
+   "model": "deepseek/deepseek-v3.2",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "d3a67112c27b886e",
+   "model": "deepseek/deepseek-v3.2",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "7b82b01d0026e075",
+   "model": "z-ai/glm-4.7",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "92bcb8339e4ffce0",
+   "model": "z-ai/glm-4.7",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "72f057c36b3e278f",
+   "model": "z-ai/glm-5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "fe52b0afabf338b9",
+   "model": "z-ai/glm-5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "4dde3ef8a3d889f3",
+   "model": "openai/gpt-5.4",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "d183ed03a9706b69",
+   "model": "openai/gpt-5.4",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "9a6af23afa2fb9a9",
+   "model": "openai/gpt-5.5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "0e92dafe4dd2371a",
+   "model": "openai/gpt-5.5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "fdd04acc9e0636d8",
+   "model": "openai/gpt-5.6-sol",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "5a5d586f2f40f636",
+   "model": "openai/gpt-5.6-sol",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "5ff91dab0e2e5c30",
+   "model": "google/gemini-3.1-pro-preview",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "be4617285e3dcf61",
+   "model": "google/gemini-3.1-pro-preview",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "b8767d379eaf49c1",
+   "model": "google/gemini-3.5-flash",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "2d2d47ade9bd34ae",
+   "model": "google/gemini-3.5-flash",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "4f21f8d204808bac",
+   "model": "google/gemini-3.5-flash-lite",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "e82bda0b1b2a2653",
+   "model": "google/gemini-3.5-flash-lite",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "cad53b06bbd72c04",
+   "model": "google/gemma-3-12b-it",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "f8dab2635d98891a",
+   "model": "google/gemma-3-12b-it",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "84157153aa2e9319",
+   "model": "google/gemma-3-27b-it",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "91637251b7035e46",
+   "model": "google/gemma-3-27b-it",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "17ec4e114214da14",
+   "model": "x-ai/grok-4.3",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "458803c28186e6da",
+   "model": "x-ai/grok-4.3",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "1f55fcee84293e60",
+   "model": "x-ai/grok-4.5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "91deb80db06ac4d7",
+   "model": "x-ai/grok-4.5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "1ee3708f98453ba1",
+   "model": "moonshotai/kimi-k2",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "38c40ed761f3aeb5",
+   "model": "moonshotai/kimi-k2",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "892de480835ff452",
+   "model": "moonshotai/kimi-k2.5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "5cd7094664d3a00e",
+   "model": "moonshotai/kimi-k2.5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "1b6561c5b0824419",
+   "model": "moonshotai/kimi-k2.6",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "e40c0956e75c3c05",
+   "model": "moonshotai/kimi-k2.6",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "f55a6bc0c46f805d",
+   "model": "meta-llama/llama-3.1-8b-instruct",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "447c53d05020d747",
+   "model": "meta-llama/llama-3.1-8b-instruct",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "0756e22a4901e17c",
+   "model": "meta-llama/llama-3.3-70b-instruct",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "9072426bb1f1fde1",
+   "model": "meta-llama/llama-3.3-70b-instruct",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "bac6d1356ea6cb85",
+   "model": "meta-llama/llama-4-maverick",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "168314052921e8b1",
+   "model": "meta-llama/llama-4-maverick",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "50ee1ef6b456315d",
+   "model": "minimax/minimax-m2.5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "03e32470d85671df",
+   "model": "minimax/minimax-m2.5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "974d0094d94f55d0",
+   "model": "minimax/minimax-m2.1",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "e0fae34d8fece5c4",
+   "model": "minimax/minimax-m2.1",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "2c369bb2bbcba052",
+   "model": "minimax/minimax-m3",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "b632c8309e0b4265",
+   "model": "minimax/minimax-m3",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "92cdcf8bbfcf0109",
+   "model": "mistralai/mistral-small-3.2-24b-instruct",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "1e99162853fb8c6a",
+   "model": "mistralai/mistral-small-3.2-24b-instruct",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "8f8bd7fa89726a48",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "8f315e78b2b14c0e",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "cf01f3d4744a8042",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "f2333b66df46ca76",
+   "model": "nvidia/nemotron-3-ultra-550b-a55b",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "b4743438719a60e5",
+   "model": "qwen/qwen3.5-122b-a10b",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "dd17ebff6c93f548",
+   "model": "qwen/qwen3.5-122b-a10b",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "4b60d945be9f386f",
+   "model": "qwen/qwen3.5-27b",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "0601d2c522fcbbd0",
+   "model": "qwen/qwen3.5-27b",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "03a8c7ad4e0bcb77",
+   "model": "qwen/qwen3.5-397b-a17b",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "efd5bb072962dc83",
+   "model": "qwen/qwen3.5-397b-a17b",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "10147038d95208c8",
+   "model": "deepseek/deepseek-r1",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "edd6df9438f34981",
+   "model": "deepseek/deepseek-r1",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "86ffa3ac9d724cdf",
+   "model": "mistralai/mistral-large-2512",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "ff98b2f51e773f8f",
+   "model": "mistralai/mistral-large-2512",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "42d5e72f8ecc941a",
+   "model": "mistralai/mistral-medium-3.1",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "127eb9948af14cc6",
+   "model": "mistralai/mistral-medium-3.1",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  },
+  {
+   "unit_id": "2a7fa3edad9b963f",
+   "model": "z-ai/glm-4.5",
+   "item_id": "6a2e9f0d9b0b8587160de35f|2026-07-21",
+   "arm": "original",
+   "level": 1,
+   "prompt_sha": "758aa52a49525291",
+   "prompt_chars": 517
+  },
+  {
+   "unit_id": "555dca5365564b4b",
+   "model": "z-ai/glm-4.5",
+   "item_id": "69ca71bce1dfbe005d941314|2026/4/30",
+   "arm": "original",
+   "level": 2,
+   "prompt_sha": "90c7779116cc1f9a",
+   "prompt_chars": 1312
+  }
+ ]
+}

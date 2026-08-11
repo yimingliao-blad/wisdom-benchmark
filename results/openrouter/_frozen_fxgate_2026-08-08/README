@@ -1,0 +1,5 @@
+FROZEN SNAPSHOT of runs/or_futurex_fxgate as it stood after the 2026-08-08 attempt, before the
+2026-08-10 run appended ~2,100 records. Tests that pin COUNTS (411 kept / 608 out-of-plan /
+18 bare / 10 UNDECIDED) read THIS, not the live directory: a count asserted against a directory
+that keeps growing is not a pin, it is a number re-bumped on every run until it tests nothing.
+Memory: pinned-counts-need-a-frozen-scope. Invariants may still be asserted over the live dir.
