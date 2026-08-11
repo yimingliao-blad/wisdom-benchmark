@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Fetch the phase-2 benchmark corpora and rebuild the exact item files the runs used.
 #
-# The datasets are NOT committed: third-party and variously licensed.
-#   FutureX-Past  futurex-ai/Futurex-Past   Apache-2.0
-#   BTF-3         BTF-2/BTF-3               CC-BY-NC-4.0   <-- non-commercial
+# The datasets are fetched rather than committed. This is a CHOICE, not a licence bar:
+#   FutureX-Past  futurex-ai/Futurex-Past   Apache-2.0     no restriction at all
+#   BTF-3         BTF-2/BTF-3               CC-BY-NC-4.0   redistribution IS allowed with
+#                                                          attribution; COMMERCIAL USE is not
+# Provenance, licences and derivation: docs/DATASETS-phase2.md
 #
 # BOTH DOWNLOADS ARE PINNED TO A COMMIT. This is not caution for its own sake: the FutureX
 # parquet CHANGED upstream after these runs (252,921 -> 257,915 bytes on 2026-08-11), so an

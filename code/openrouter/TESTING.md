@@ -53,10 +53,19 @@ not a code defect; the harness fails loud on missing data by design.
    This check earned its place during development: it caught a rebuilt fixture that parsed equal but
    serialised differently, which would have produced a subtly different file.
 
-## Why the corpora are not committed
+## Why the corpora are fetched rather than committed
 
-Third-party and variously licensed — **BTF-3 is CC-BY-NC-4.0** — and the item files contain the
-benchmark prompts with their ground truth. Same policy as phase 1's `code/download_data.sh`.
+**Not a licensing bar** — worth stating precisely, because it is easy to assume otherwise.
+FutureX-Past is **Apache-2.0** and could be committed with no restriction. BTF-3 is
+**CC-BY-NC-4.0**, which *permits* redistribution with attribution and restricts **commercial use**,
+not copying; its 6.2 MB binary parquet could be committed with an attribution and non-commercial
+notice.
+
+They are fetched because a pinned fetch records and verifies *which* upstream revision the results
+came from — that is how the FutureX upstream change was noticed — and because it matches phase 1's
+existing `code/download_data.sh` policy. Full provenance, licences and derivation:
+[`docs/DATASETS-phase2.md`](../../docs/DATASETS-phase2.md).
+
 Our own run output *is* committed, gzipped, under `results/openrouter/`.
 
 ## Requirements

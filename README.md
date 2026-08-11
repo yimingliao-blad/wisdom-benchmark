@@ -90,8 +90,9 @@ results/openrouter/   records.jsonl.gz         every scored row, one per call, g
 
 ### Running it
 
-**Step 1 — fetch the data.** The corpora are not committed (third-party; BTF-3 is CC-BY-NC-4.0), so
-they are downloaded and the item files rebuilt:
+**Step 1 — fetch the data.** The corpora are downloaded rather than committed, and the item files
+rebuilt from them — see [`docs/DATASETS-phase2.md`](docs/DATASETS-phase2.md) for full provenance,
+licences and how each corpus is derived:
 
 ```bash
 cd code/openrouter
@@ -99,7 +100,7 @@ cd code/openrouter
 ```
 
 It pulls FutureX-Past (`futurex-ai/Futurex-Past`, Apache-2.0) and BTF-3 (`BTF-2/BTF-3`,
-CC-BY-NC-4.0) **pinned to a commit and sha256-verified**, re-runs the seeded draws to rebuild the
+**CC-BY-NC-4.0 — non-commercial use only**) **pinned to a commit and sha256-verified**, re-runs the seeded draws to rebuild the
 exact 110-item corpora, restores the run directories from the committed
 `results/openrouter/*.jsonl.gz`, and then checks the rebuild is byte-identical to what the published
 records were bought against — halting if it is not.
