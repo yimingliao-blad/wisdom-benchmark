@@ -1,18 +1,4 @@
-"""M6-T6 (L-D) — every transport and provider error class, injected through the REAL retry path.
-
-WHY ATTEMPT COUNTS ARE ASSERTED, not just outcomes: the retry loop is the one place a bug SPENDS
-MONEY SILENTLY. A permanent error retried five times buys five guaranteed failures and looks normal.
-
-WHAT THIS REPLACES: classify_error was checked against 12 synthetic cases in a shell earlier today.
-It was correct, and the check vanished with the shell. An inline demonstration protects no future
-change; this re-runs.
-
-LIMITATION: no real 429/503/truncated body has been seen since the classification was written (the
-one real JSONDecodeError predates it). These are INJECTION tests against the documented contract,
-not observations of provider behaviour.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_transport -v
-"""
+"""Transport-level error handling."""
 import json
 import os
 import sys
@@ -31,7 +17,6 @@ import run_openrouter as RO      # noqa: E402
 
 
 def api_error(code, error_type=None, provider_code=None, retry_after=None):
-    """An LlmError shaped exactly as llm_api._post builds one for an HTTP error."""
     e = llm_api.LlmError(f"HTTP {code}")
     e.status = code
     e.error_type = error_type
@@ -43,7 +28,6 @@ def api_error(code, error_type=None, provider_code=None, retry_after=None):
 
 
 def transport_error(kind):
-    """An LlmError shaped as _post builds one for a CLIENT-SIDE failure."""
     e = llm_api.LlmError(f"{kind} calling ...")
     e.status = e.error_type = e.provider_code = e.retry_after = None
     e.ratelimit = {}
@@ -53,7 +37,6 @@ def transport_error(kind):
 
 
 class TheDocumentedTaxonomy(unittest.TestCase):
-    """One case per class in OpenRouter's documented error contract."""
 
     def test_retryable_api_errors(self):
         for code, et in ((429, "rate_limit_exceeded"), (503, "provider_overloaded"),
@@ -63,7 +46,6 @@ class TheDocumentedTaxonomy(unittest.TestCase):
             self.assertEqual(klass, f"api:{et}")
 
     def test_permanent_api_errors_are_NOT_retried(self):
-        """Retrying these buys guaranteed failures at full price."""
         for code, et in ((401, "authentication"), (402, "payment_required"),
                          (403, "permission_denied"), (400, "invalid_request"),
                          (400, "content_policy_violation")):
@@ -84,7 +66,6 @@ class TheDocumentedTaxonomy(unittest.TestCase):
 
 
 class TheRealRetryLoop(unittest.TestCase):
-    """Injected into the ACTUAL loop -- testing a re-implementation would prove nothing."""
 
     def setUp(self):
         self.orig_chat, self.orig_sleep = llm_api.openrouter_chat, RO.time.sleep
@@ -114,7 +95,6 @@ class TheRealRetryLoop(unittest.TestCase):
         self.assertEqual(trace[0]["failure_class"], "transport:JSONDecodeError")
 
     def test_a_PERMANENT_error_is_attempted_exactly_once(self):
-        """The money-losing bug this test exists to prevent."""
         self.script([api_error(402, "payment_required")])
         with self.assertRaises(llm_api.LlmError) as cm:
             RO._chat_with_backoff("p", "m", 100, None, [])
@@ -141,7 +121,6 @@ class TheRealRetryLoop(unittest.TestCase):
         self.assertTrue(trace[0]["from_header"], "and the choice must be auditable")
 
     def test_escalation_stops_at_the_cap_rather_than_climbing_to_the_ceiling(self):
-        """glm-4.6 burned 16k->131k returning empty each time; MAX_ESCALATIONS is the brake."""
         empty = ("", {"choices": [{"message": {"content": ""}, "finish_reason": "stop"}],
                       "usage": {"prompt_tokens": 1, "completion_tokens": 9}})
         self.script([empty])
@@ -153,7 +132,6 @@ class TheRealRetryLoop(unittest.TestCase):
 
 
 class TheWallClockBoundIsREAL(unittest.TestCase):
-    """urllib's timeout is per-socket-read: a call made with timeout=60 was MEASURED at 210s."""
 
     def setUp(self):
         self.orig = llm_api.openrouter_chat
@@ -191,7 +169,6 @@ class TheWallClockBoundIsREAL(unittest.TestCase):
 
 
 class ACorruptRecordLineIsCaught(unittest.TestCase):
-    """FAILURE_MODES S4: returning the readable subset would silently shrink a denominator."""
 
     def test_a_truncated_jsonl_line_raises_rather_than_being_skipped(self):
         with tempfile.TemporaryDirectory() as d:
@@ -207,11 +184,6 @@ class ACorruptRecordLineIsCaught(unittest.TestCase):
 
 
 class ThePerUnitDeadlineBoundsSTACKEDAttempts(unittest.TestCase):
-    """Codex C3 (BLOCKING). WALL_CLOCK bounds ONE attempt; a failed attempt is RETRIED and
-    escalation adds more, so attempts STACK. Measured on the gate stages: one minimax call consumed
-    840s and one glm-4.7 call 1,333s while 221 units sat finished. At 8,140 units that is ~12 hours,
-    almost all of it a handful of stuck calls.
-    """
 
     def setUp(self):
         self._chat = llm_api.openrouter_chat
@@ -238,7 +210,6 @@ class ThePerUnitDeadlineBoundsSTACKEDAttempts(unittest.TestCase):
         self.assertLess(self.calls["n"], 99, "it kept retrying past the unit budget")
 
     def test_the_give_up_reason_is_RECORDED_as_unit_deadline(self):
-        """A silent give-up is indistinguishable from a clean failure downstream."""
         llm_api.openrouter_chat = self._overloaded()
         try:
             RO._chat_with_backoff("p", "m/x", 100, None, [], tries=99, timeout=5, wall=1,
@@ -250,8 +221,6 @@ class ThePerUnitDeadlineBoundsSTACKEDAttempts(unittest.TestCase):
             self.assertEqual(getattr(e, "gave_up_because", None), "unit_deadline")
 
     def test_WITHOUT_a_deadline_the_old_stacking_behaviour_is_unchanged(self):
-        """The control: if it bounded things with no deadline set, it would be changing the
-        retry contract for every call, not just the stuck ones."""
         llm_api.openrouter_chat = self._overloaded(delay=0.01)
         with self.assertRaises(Exception) as cm:
             RO._chat_with_backoff("p", "m/x", 100, None, [], tries=3, timeout=5, wall=1)
@@ -259,7 +228,6 @@ class ThePerUnitDeadlineBoundsSTACKEDAttempts(unittest.TestCase):
         self.assertEqual(getattr(cm.exception, "gave_up_because", None), "retries_exhausted")
 
     def test_a_single_attempt_is_never_allowed_past_the_unit_deadline(self):
-        """The per-attempt wall must shrink to fit the remaining unit budget."""
         llm_api.openrouter_chat = self._overloaded(delay=5.0)
         t0 = time.time()
         with self.assertRaises(Exception):

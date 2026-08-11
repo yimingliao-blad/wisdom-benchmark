@@ -1,15 +1,4 @@
-"""M4 acceptance — the quarantine policy (owner ruling 2026-08-08).
-
-An error is a METHOD defect, not bad luck. In REAL mode a failing model's remaining units are
-dropped, EVERY OTHER MODEL RUNS TO COMPLETION, and the manifest enumerates exactly what to re-run.
-In SMOKE mode the same error halts the run instead, because smoke is where the method gets fixed.
-
-THE FAILURE THIS GUARDS: a unit that disappears without appearing anywhere. A silent drop shrinks
-the sample for precisely the models that misbehave, which biases the result toward the well-behaved
-ones — invisibly.
-
-No network: the API call is replaced by a stub. Run: python3 -m unittest test_quarantine -v
-"""
+"""Model quarantine behaviour."""
 import json
 import os
 import shutil
@@ -119,7 +108,6 @@ class Quarantine(unittest.TestCase):
         self.assertEqual(man["units_to_rerun_count"], len(man["units_to_rerun"]))
 
     def test_manifest_carries_the_fields_needed_to_reproduce_the_rerun(self):
-        """Codex C6: model, arm, question id, attempt count, failure reason, run config + hash."""
         _run(self.d, "real", self.tag)
         man = json.load(open(os.path.join(self.out, "quarantine_manifest.json")))
         self.assertTrue(man["run_config_hash"])
@@ -134,12 +122,6 @@ class Quarantine(unittest.TestCase):
                 self.assertIn(k, u)
 
     def test_smoke_mode_records_every_error_and_runs_to_completion(self):
-        """Owner 2026-08-08: the smoke surfaces EVERY error class in one pass.
-
-        It used to halt on the first defect. That revealed one class per run and threw away the
-        remaining planned calls each time -- ~230 already-bought calls on one occasion. Now every
-        error is recorded and the run continues; the ledger carries them all.
-        """
         p = _run(self.d, "smoke", self.tag)
         self.assertEqual(p.returncode, 0, f"smoke must complete:\n{p.stdout}\n{p.stderr}")
         self.assertIn("recorded, continuing", p.stdout, "the error must be logged, not swallowed")
@@ -161,7 +143,6 @@ class Quarantine(unittest.TestCase):
 
 
 class PostRunInvariant(unittest.TestCase):
-    """Codex C7 — the check must catch a forbidden record written OUTSIDE the runner."""
 
     def test_a_forbidden_record_is_caught(self):
         import run_openrouter as R
@@ -177,8 +158,6 @@ class PostRunInvariant(unittest.TestCase):
         shutil.rmtree(d, ignore_errors=True)
 
     def test_a_refusal_scored_as_unknown_is_caught(self):
-        """The M5 correction, enforced on disk: NO_ANSWER is the study's negative result and MUST
-        carry compliant=False. Recording it as None silently deletes the observation."""
         import run_openrouter as R
         d = tempfile.mkdtemp(); p = os.path.join(d, "records.jsonl")
         with open(p, "w") as f:

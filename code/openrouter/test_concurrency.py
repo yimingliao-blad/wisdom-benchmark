@@ -1,20 +1,4 @@
-"""M6-T8 (L-E) — concurrency: what 16 workers sharing one file and three counters can break.
-
-Four failure modes, all invisible in a single-threaded run:
-  X1  interleaved writes corrupt the JSONL mid-record
-  X3  a worker's result lands under ANOTHER unit's identity (C3 misassociation, under load)
-  X4  two threads quarantine the same model at once
-  X5  a worker dies and its unit vanishes without appearing anywhere
-
-X3 is the dangerous one: unit conservation still holds, the JSON is valid, the counts match, and the
-table is wrong. It is only detectable because every record now carries the hash of the prompt that
-produced it -- which is what the manifest check is for.
-
-The stub deliberately introduces JITTER and interleaving pressure, because a concurrency test that
-never actually races proves nothing.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_concurrency -v
-"""
+"""Worker and per-provider concurrency limits."""
 import collections
 import json
 import os
@@ -103,7 +87,6 @@ class UnderSixteenWorkers(unittest.TestCase):
         self.assertEqual(len(recs), len(items) * len(roster))
 
     def test_X5_every_planned_unit_appears_exactly_once(self):
-        """Unit conservation: a worker that dies must not make a unit vanish silently."""
         p, out, items, roster = run(self.tmp, self.tag, workers=16)
         recs = [json.loads(l) for l in open(os.path.join(out, "records.jsonl")) if l.strip()]
         seen = collections.Counter(PS.record_unit_id(r) for r in recs)
@@ -112,10 +95,6 @@ class UnderSixteenWorkers(unittest.TestCase):
                         f"duplicated units under load: {[k for k, v in seen.items() if v > 1]}")
 
     def test_X3_no_MISASSOCIATION_under_load(self):
-        """The silent one. Valid JSON, conserved units, matching counts -- and a wrong table.
-
-        Only detectable because each record carries the hash of the prompt that produced it.
-        """
         p, out, items, roster = run(self.tmp, self.tag, workers=16)
         recs = [json.loads(l) for l in open(os.path.join(out, "records.jsonl")) if l.strip()]
         m = MF.build(roster, items, arms=("original",))
@@ -126,7 +105,6 @@ class UnderSixteenWorkers(unittest.TestCase):
         self.assertTrue(v["clean"])
 
     def test_the_misassociation_check_would_actually_CATCH_one(self):
-        """A test that can only pass is not evidence: corrupt one record and confirm detection."""
         p, out, items, roster = run(self.tmp, self.tag, workers=16)
         recs = [json.loads(l) for l in open(os.path.join(out, "records.jsonl")) if l.strip()]
         m = MF.build(roster, items, arms=("original",))
@@ -142,7 +120,6 @@ class UnderSixteenWorkers(unittest.TestCase):
         self.assertFalse(v["clean"])
 
     def test_results_are_identical_at_one_worker_and_sixteen(self):
-        """Concurrency must not change WHAT is produced, only how fast."""
         import shutil
         p1, out1, items, roster = run(self.tmp, self.tag, workers=1)
         a = sorted(PS.record_unit_id(json.loads(l))
@@ -155,12 +132,8 @@ class UnderSixteenWorkers(unittest.TestCase):
 
 
 class TheChecksOwnLimits(unittest.TestCase):
-    """What the misassociation check CANNOT see, stated rather than assumed."""
 
     def test_a_swap_between_units_sharing_a_prompt_is_UNDETECTABLE(self):
-        """Found by a fixture that gave every item the same text. The check compares prompt hashes,
-        so two units with IDENTICAL prompts are indistinguishable to it. The real 100-item manifest
-        has 100 distinct hashes, but this is a property to rely on knowingly, not by luck."""
         same = [{"item_id": f"q{i}", "level": 1,
                  "prompt": "IMPORTANT: Your final answer MUST end with this exact format:\n"
                            "\\boxed{Yes} or \\boxed{No}"} for i in range(3)]
@@ -177,7 +150,6 @@ class TheChecksOwnLimits(unittest.TestCase):
                          "documents the blind spot: identical prompts hide a swap")
 
     def test_the_REAL_manifest_has_distinct_prompts_per_item(self):
-        """So the blind spot above does not apply to the actual run."""
         real = json.load(open(os.path.join(HERE, "runs", "manifest_4d3477ce313573a7.json")))
         per_model = collections.defaultdict(set)
         for u in real["units"]:
@@ -189,7 +161,6 @@ class TheChecksOwnLimits(unittest.TestCase):
 
 
 class QuarantineUnderLoad(unittest.TestCase):
-    """X4: two threads deciding to quarantine the same model at the same moment."""
 
     def test_quarantine_state_is_idempotent(self):
         import threading

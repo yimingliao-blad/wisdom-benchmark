@@ -1,14 +1,4 @@
-"""M6-T16/S2 — acceptance for the SMOKE'S acceptance checker.
-
-A gate that can only pass is not a gate. Every criterion is exercised BOTH ways: clean on a healthy
-run, and failing on a seeded defect of exactly the kind it exists to catch.
-
-The one that matters most is A1. The CoT arm was dropped because 294/312 = 94.2% of original-arm
-replies already contained reasoning. If the paid smoke lands materially below that, the cut is
-invalidated and the run doubles in size and cost. A1 must be able to say so.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_smoke_acceptance -v
-"""
+"""Smoke acceptance criteria."""
 import json
 import os
 import shutil
@@ -45,12 +35,6 @@ class Base(unittest.TestCase):
         self.addCleanup(shutil.rmtree, self.d, True)
 
     def healthy(self):
-        """A run that should clear every criterion.
-
-        18 models x 4 items = 72 replies. A1 now decides on the 95% lower bound, and 72/72 gives
-        0.949 -- just clear of the 0.942 premise. The 12-reply fixture cannot pass A1 at ANY rate,
-        which is the criterion working, not a fixture bug.
-        """
         build_run_dir(self.d, n_models=18)
         rewrite(self.d, lambda recs: [dict(r, reasoning=LONG_REASONING, n_choices=1, ok=True)
                                       for r in recs])
@@ -71,13 +55,6 @@ class AHealthyRunClears(Base):
 
 
 class M1ReasoningIsMEASUREDNotGated(Base):
-    """Owner decision 2026-08-08: both benchmarks run with their NATIVE prompt, so there is no CoT
-    arm to justify dropping and the 94.2% premise no longer gates anything.
-
-    A1 became M1: still measured, because the owner wants the answer AND the model's reasoning, but
-    it cannot pass or fail the run. These tests pin that it reports honestly and stays out of the
-    pass/fail set -- so a measurement can never be mistaken for a passed gate.
-    """
 
     def test_it_is_NOT_in_the_pass_fail_criteria(self):
         rep = self.healthy()
@@ -86,7 +63,6 @@ class M1ReasoningIsMEASUREDNotGated(Base):
         self.assertIn("M1", [m["id"] for m in rep["measurements"]])
 
     def test_a_ZERO_reasoning_rate_does_NOT_block_the_run(self):
-        """The point of the change: even a 0% rate is a finding, not a gate."""
         build_run_dir(self.d)
         rewrite(self.d, lambda recs: [dict(r, reasoning="", text="\\boxed{Yes}") for r in recs])
         FZ.finalize(self.d)
@@ -97,7 +73,6 @@ class M1ReasoningIsMEASUREDNotGated(Base):
         self.assertTrue(rep["cleared"], "a measurement must not decide clearance")
 
     def test_it_still_reports_the_rate_AND_its_confidence_bound(self):
-        """The bound stays visible: a point estimate alone is what produced the false PASS."""
         rep = self.healthy()
         m1 = next(m for m in rep["measurements"] if m["id"] == "M1")
         self.assertEqual(m1["evidence"]["rate"], 1.0)
@@ -105,7 +80,6 @@ class M1ReasoningIsMEASUREDNotGated(Base):
         self.assertIn("CI lower bound", m1["detail"])
 
     def test_it_names_WHICH_models_answered_bare(self):
-        """A rate alone cannot say whether the loss is spread or concentrated in one model."""
         build_run_dir(self.d)
 
         def strip_beta(recs):
@@ -165,7 +139,6 @@ class EachCriterionCanFail(Base):
         self.assertIn("UNDECIDED", r.detail)
 
     def test_A6_a_real_cap_breach_reconstructed_from_the_timestamps(self):
-        """Overlapping intervals on one provider must be caught from the records alone."""
         build_run_dir(self.d)
         sp = os.path.join(self.d, "schedule.json")
         sched = json.load(open(sp))
@@ -180,7 +153,6 @@ class EachCriterionCanFail(Base):
         self.assertGreater(r.evidence["observed_peak"]["alpha"], 1)
 
     def test_A6_passes_on_non_overlapping_calls(self):
-        """The control: if it could not distinguish these, the breach test proves nothing."""
         build_run_dir(self.d)
         recs = [json.loads(l) for l in open(os.path.join(self.d, "records.jsonl"))]
         r = SA.a6_per_provider_cap_held(recs, run_dir=self.d)
@@ -216,9 +188,6 @@ class EachCriterionCanFail(Base):
 
 
 class A11CatchesASelfContradictoryVerdict(Base):
-    """The real defect from the paid smoke: google/gemma-3-27b-it labelled TRUNCATED while carrying
-    finish_reason=stop, coherent reasoning, and a parsed compliant answer. Ten criteria passed and
-    none of them noticed, because none of them checked whether a verdict was CORRECT."""
 
     def test_the_self_contradicting_shape_is_caught(self):
         # The shape is the subject, not the vendor: a TRUNCATED verdict on a record that finished
@@ -250,11 +219,6 @@ class A11CatchesASelfContradictoryVerdict(Base):
 
 
 class A12TheAnswerItselfIsEvaluated(Base):
-    """Owner ruling 2026-08-08: "if the result is not interpretable, that is a bad result."
-
-    Compliance and interpretability are different questions. Every seeded case below is
-    FORMAT-COMPLIANT -- a well-formed box -- and answers nothing.
-    """
 
     def _with_box(self, box):
         build_run_dir(self.d)
@@ -284,7 +248,6 @@ class A12TheAnswerItselfIsEvaluated(Base):
         self.assertEqual(r.verdict, "FAIL")
 
     def test_a_STAMP_DISAGREEMENT_FAILS(self):
-        """If the runner's stamp and the re-derivation differ, one of them is broken."""
         build_run_dir(self.d)
         recs = rewrite(self.d, lambda rs: [dict(r, answer_interpretable=False) for r in rs])
         r = SA.a12_answers_are_INTERPRETABLE(recs, run_dir=self.d)

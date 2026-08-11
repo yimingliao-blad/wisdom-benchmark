@@ -1,11 +1,4 @@
-"""M6-T4/S5 — acceptance for the frozen schedule and the censoring census.
-
-The property that matters: dispatch order must be REPRODUCIBLE and must not burst one provider,
-because provider correlates with model and model is the variable under study. The seeded defect is
-the natural order -- grouped by model -- which bursts a single provider for hundreds of calls.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_schedule -v
-"""
+"""Call scheduling."""
 import collections
 import json
 import os
@@ -51,16 +44,11 @@ class OrderIsFrozenAndReproducible(unittest.TestCase):
 
 
 class ItDoesNotBurstOneProvider(unittest.TestCase):
-    """provider correlates with model; a burst makes throttling a per-model condition."""
 
     def setUp(self):
         self.mf = m()
 
     def test_it_bounds_the_burst_on_the_REAL_manifest_not_just_a_fixture(self):
-        """THE test that caught the defect. The 4-item fixture has near-equal provider queues, so
-        naive round-robin looked fine (12) while the real 100-item manifest burst to 101 -- the
-        short queues exhaust and the long ones run consecutively. A fixture that cannot exhibit the
-        failure proves nothing, so this asserts against the REAL frozen manifest."""
         real = json.load(open(os.path.join(HERE, "runs", "manifest_4d3477ce313573a7.json")))
         s = SC.build(real)
         longest = SC.max_provider_run(s, real)
@@ -76,7 +64,6 @@ class ItDoesNotBurstOneProvider(unittest.TestCase):
         self.assertLessEqual(SC.max_provider_run(s, self.mf), len(s["providers"]))
 
     def test_the_SEEDED_DEFECT_a_model_grouped_order_bursts_badly(self):
-        """The natural order -- iterate models, then items -- is the defect."""
         grouped = {**self.mf}
         grouped_units = sorted(self.mf["units"], key=lambda u: (u["model"], u["item_id"]))
         grouped["units"] = grouped_units
@@ -87,7 +74,6 @@ class ItDoesNotBurstOneProvider(unittest.TestCase):
                            "the grouped order must be markedly worse, or this test proves nothing")
 
     def test_per_provider_cap_is_recorded_as_a_CHOICE(self):
-        """OpenRouter publishes no per-provider limit, so the cap must be visible as a decision."""
         s = SC.build(self.mf)
         self.assertIn("per_provider", s)
         self.assertIn("policy_version", s)
@@ -104,7 +90,6 @@ class ResumePreservesOrder(unittest.TestCase):
 
 
 class CensoringIsRecordedNeverAbsent(unittest.TestCase):
-    """An abandoned unit must not hide inside 'missing'."""
 
     def setUp(self):
         self.mf = m()
@@ -141,7 +126,6 @@ class CensoringIsRecordedNeverAbsent(unittest.TestCase):
         self.assertEqual(c[0]["trigger"], "max-spend reached")
 
     def test_every_bucket_is_present_even_at_zero(self):
-        """A zero bucket that is ABSENT is indistinguishable from a bucket that is not tracked."""
         c = SC.census(self.mf, [], [])
         for k in ("OBSERVED", "UNOBSERVED", "NEEDS_INSPECTION", "CENSORED", "MISSING"):
             self.assertIn(k, c, f"{k} must be reported even when it is zero")

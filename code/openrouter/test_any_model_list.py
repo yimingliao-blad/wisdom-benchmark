@@ -1,24 +1,4 @@
-"""The pipeline runs on ANY model list, and the plan cannot go stale when the list changes.
-
-Owner, 2026-08-09/10:
-  "make the current project can work on the list no matter what i ask you to do"
-  "the point is not model you should check. I ask you to build the code on flexible model I ask you
-   to do. also, make the plan auditable, resumable, and testable"
-
-The three properties, each proven rather than asserted:
-
-  FLEXIBLE   an arbitrary list of names -- not the owner's 25, not any list this code has seen --
-             goes end to end: roster -> manifest -> schedule -> resume -> table. Then the list
-             CHANGES mid-flight and the run continues.
-  AUDITABLE  every derived value names its source, and the manifest carries the lineage of what it
-             superseded, so the plan a number was computed under is recoverable from the artifacts.
-  RESUMABLE  work already answered survives a list change; a call that never delivered does not
-             count as done; a record for a dropped model is retained, not deleted or absorbed.
-  TESTABLE   the plan's own scope block is regenerated from the roster and compared, so changing the
-             list and forgetting the plan fails HERE instead of publishing a stale scope.
-
-Offline. The catalog is a fixture, the items are synthetic, no key is read and nothing is bought.
-"""
+"""The harness accepts an arbitrary model list."""
 import importlib.util
 import json
 import os
@@ -48,7 +28,6 @@ PLAN_MD = os.path.join(HERE, "..", "..", "..", "plans", "openrouter-output-integ
 
 
 def catalog(ids):
-    """A catalog fixture for arbitrary ids -- deliberately varied, so the derivations get exercised."""
     out = []
     for i, mid in enumerate(ids):
         out.append({
@@ -66,10 +45,6 @@ MARKER = "IMPORTANT: Your final answer MUST end with this exact format:"
 
 
 def items(n=3):
-    """Synthetic but VALID items -- item_validate refuses a corpus that is not fit to ask, and it is
-    right to: the format marker decides how the prompt renders, and an end_time before the
-    contamination anchor would let a model answer from memory. The first version of this fixture had
-    neither and was rejected, which is the validator doing its job on a test's shortcut."""
     return [{"item_id": f"q{i}|2026-07-0{i + 1}", "level": 1,
              "end_time": f"2026-07-0{i + 1}", "ground_truth": "A",
              "prompt": (f"Will thing {i} happen by mid-2026?\n\n{MARKER}\n"
@@ -131,7 +106,6 @@ class AnArbitraryListGoesEndToEnd(unittest.TestCase):
             self.assertEqual(mani["n_models"], len(ids))
 
     def test_the_pipeline_never_needed_to_know_the_names(self):
-        """The manifest, schedule and table are built from the roster, whatever is in it."""
         roster = self.build_roster(self.IDS)
         mani = MF.build(roster, self.items, arms=("original",), bench="futurex")
         recs = [self.record(mani, m["id"], i["item_id"]) for m in roster for i in self.items]
@@ -142,7 +116,6 @@ class AnArbitraryListGoesEndToEnd(unittest.TestCase):
     # ---- RESUMABLE -----------------------------------------------------------------------------
 
     def test_changing_the_list_mid_run_keeps_the_answered_work(self):
-        """The owner's rule: already answered by a model still on the list -> keep. Otherwise buy."""
         roster_a = self.build_roster(self.IDS)
         mani_a = MF.build(roster_a, self.items, arms=("original",), bench="futurex")
         done = [self.record(mani_a, self.IDS[0], i["item_id"]) for i in self.items]
@@ -195,7 +168,6 @@ class AnArbitraryListGoesEndToEnd(unittest.TestCase):
 
 
 class ThePlanCannotSilentlyGoStale(unittest.TestCase):
-    """TESTABLE: change the list, forget the plan -> this fails, instead of the plan lying."""
 
     # EVERY arm of the experiment, not just the one that was rebuilt last. The BTF-3 rows carried
     # figures from the superseded roster while FutureX was regenerated, and a single-arm check would
@@ -216,7 +188,6 @@ class ThePlanCannotSilentlyGoStale(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
 
     def test_the_check_would_FAIL_on_a_drifted_plan(self):
-        """A freshness check that cannot fail proves nothing."""
         with tempfile.TemporaryDirectory() as d:
             fake = os.path.join(d, "plan.md")
             open(fake, "w").write(f"{PSCOPE.BEGIN}\nstale numbers from another roster\n{PSCOPE.END}\n")
@@ -226,7 +197,6 @@ class ThePlanCannotSilentlyGoStale(unittest.TestCase):
             self.assertIn("does NOT match the current roster", r.stdout + r.stderr)
 
     def test_it_covers_EVERY_arm_not_just_the_one_last_rebuilt(self):
-        """The staleness this exists to catch: FutureX regenerated, BTF-3 left on old figures."""
         r = subprocess.run([sys.executable, os.path.join(HERE, "survey", "plan_scope.py")]
                            + self.ARGS + ["--check", PLAN_MD], capture_output=True, text=True)
         self.assertIn("2 arm(s)", r.stdout + r.stderr)
@@ -235,7 +205,6 @@ class ThePlanCannotSilentlyGoStale(unittest.TestCase):
         self.assertIn("5,280 units", body)
 
     def test_a_stage_with_a_missing_item_corpus_is_REFUSED(self):
-        """A stage cannot be scoped without its items, and guessing the count defeats the purpose."""
         r = subprocess.run([sys.executable, os.path.join(HERE, "survey", "plan_scope.py")]
                            + self.ARGS + ["--stage", "btf3:/nope/items.json:cot"],
                            capture_output=True, text=True)

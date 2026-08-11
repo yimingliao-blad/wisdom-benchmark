@@ -28,11 +28,10 @@ Direct download of the exact bytes used:
 https://huggingface.co/datasets/futurex-ai/Futurex-Past/resolve/3c2e39690de35eb1fcc621251f56343c72bae8c4/data/train-00000-of-00001.parquet
 ```
 
-### ⚠ This dataset changed upstream after our runs
+### ⚠ Use the pinned revision
 
-As of 2026-08-11 the current revision's parquet is **257,915 bytes** — ours was **252,921**. The pool
-is not the one we sampled. **Always fetch the pinned revision above**, or the 110-item draw will not
-reproduce and new calls will not be comparable to the records in `results/openrouter/`.
+The current upstream revision differs from the one used here (257,915 bytes vs 252,921). Fetch the
+pinned revision above, or the item draw will not reproduce.
 
 ### How the 110-item corpus is derived
 
@@ -44,10 +43,6 @@ reproduce and new calls will not be comparable to the records in `results/openro
    **`2026-02-16`** (`item_validate.ANCHOR`): an item must resolve *after* it, or a model may already
    know the answer from pre-training.
 3. Draw **110** items — 100 target plus 10 spares for the expected 3–6% unit loss.
-
-The order matters. An earlier ad-hoc draw filtered *after* drawing and shipped 11 pre-anchor items;
-the validator caught it and halted the paid run before a single call was bought. That is why the draw
-lives in a script with the filter built in.
 
 Result: `runs/fx_items_110.json`, sha256 begins `14b03da5a8d2d892b756`.
 
@@ -116,29 +111,10 @@ Result sha256 begins `e0af581a415e90d95cc6`.
 
 ## 4. Why these are fetched rather than committed
 
-Not a licensing bar. To be accurate about it:
-
-- **FutureX-Past is Apache-2.0** — it could be committed with no restriction whatsoever.
-- **BTF-3 is CC-BY-NC-4.0**, which *permits* redistribution with attribution; it restricts
-  **commercial use**, not copying. The binary parquet is 6.2 MB and could be committed with an
-  attribution and non-commercial notice.
-
-They are fetched because:
-
-1. **The phase-1 policy already works this way** (`code/download_data.sh`), and consistency is worth
-   more than saving one command.
-2. **A pinned fetch is stronger than a copy.** It records *which* upstream revision the results came
-   from and verifies it, which is how the FutureX upstream change was noticed at all. A committed
-   copy would have silently diverged from its source with nothing to compare against.
-3. **Repo weight** — the datasets plus their aux corpora are far larger than the results.
-
-If you would rather have them committed, both may be: FutureX freely, BTF-3 with attribution and a
-non-commercial notice. That is a choice, not a constraint.
-
-**Our own run output is committed** — every scored row, gzipped, under `results/openrouter/`. Those
-are our observations, not third-party data.
-
----
+FutureX-Past is Apache-2.0 and carries no restriction. BTF-3 is CC-BY-NC-4.0, which permits
+redistribution with attribution and restricts commercial use. Both are fetched rather than copied so
+that the exact upstream revision is recorded and verified. Our own run output *is* committed, under
+`results/openrouter/`.
 
 ## 5. Attribution
 

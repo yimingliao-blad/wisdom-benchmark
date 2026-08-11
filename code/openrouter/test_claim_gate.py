@@ -1,11 +1,4 @@
-"""M6-T1/S3+S4 — acceptance for the claim-admissibility gate.
-
-S3 proves it on the REAL corpus against the S1 profile (never against remembered numbers).
-S4 proves the gate CAN FAIL: three seeded defects, each of which must break a test. A gate that
-cannot be made to fail is not evidence.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_claim_gate -v
-"""
+"""Claim gate over recorded results."""
 import json
 import os
 import unittest
@@ -17,7 +10,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 class S3_RealCorpus(unittest.TestCase):
-    """Asserted against the S1 PROFILE, re-derived here -- not against numbers I remember."""
 
     @classmethod
     def setUpClass(cls):
@@ -29,7 +21,6 @@ class S3_RealCorpus(unittest.TestCase):
                          "the profiler and the gate must read the same corpus")
 
     def test_truncation_claim_admits_only_records_that_could_show_a_truncation(self):
-        """THE point of the whole leaf: 'no natural truncations found' vs 'N could not have shown one'."""
         full = self.profile["generations"]["full_capture"]["n"]
         pre = self.profile["generations"]["pre_capture"]["n"]
         c = CG.Claim("natural truncation rate", requires=["finish_reason", "text"])
@@ -40,8 +31,6 @@ class S3_RealCorpus(unittest.TestCase):
                          "every rejected record must be rejected FOR the named field")
 
     def test_a_reasoning_claim_admits_fewer_than_full_capture(self):
-        """The profile caught what my own two-generation framing missed: `reasoning` is NOT
-        universal within full-capture, so a reasoning claim admits fewer than 594."""
         c = CG.Claim("reasoning presence rate", requires=["reasoning", "text"])
         r = c.admit(self.corpus)
         full = self.profile["generations"]["full_capture"]["n"]
@@ -51,7 +40,6 @@ class S3_RealCorpus(unittest.TestCase):
         self.assertGreater(r.admitted_n, 0)
 
     def test_cost_claims_admit_the_pre_capture_records(self):
-        """The owner-accepted ruling: old records ARE admissible for cost/usage evidence."""
         c = CG.Claim("cost per call", requires=["cost", "usage"])
         r = c.admit(self.corpus)
         self.assertGreater(r.admitted_n, self.profile["generations"]["full_capture"]["n"],
@@ -59,14 +47,12 @@ class S3_RealCorpus(unittest.TestCase):
 
 
 class S4_TheGateCanFail(unittest.TestCase):
-    """Three seeded defects. Each MUST change the outcome, or the corresponding rule is untested."""
 
     def setUp(self):
         self.corpus = CG.load_corpus()
         self.full = CP.profile()["generations"]["full_capture"]["n"]
 
     def test_defect_a_permissive_gate_silently_admits_everything(self):
-        """Rule 1: an undeclared requirement must ERROR, not admit all."""
         with self.assertRaises(CG.ClaimError):
             CG.Claim("truncation, undeclared", requires=[])
         # and the seeded permissive version would swallow the whole corpus
@@ -78,7 +64,6 @@ class S4_TheGateCanFail(unittest.TestCase):
                             "the real gate must NOT admit what the permissive defect admits")
 
     def test_defect_b_a_null_field_counted_as_present(self):
-        """Rule 2: `finish_reason: null` proves nothing and must be MISSING."""
         rec = {"ok": True, "text": "answer", "finish_reason": None}
         self.assertFalse(CG.field_present(rec, "finish_reason"))
         broken = lambda r, f: f in r            # the defect: presence by key only
@@ -90,7 +75,6 @@ class S4_TheGateCanFail(unittest.TestCase):
         self.assertEqual(r.rejected_n, 1)
 
     def test_defect_c_silent_filtering_hides_the_loss(self):
-        """Rule 3: the caller must SEE what was dropped."""
         r = CG.Claim("truncation", requires=["finish_reason", "text"]).admit(self.corpus)
         self.assertTrue(r.rejected, "the rejected set must be returned, not discarded")
         self.assertIn("finish_reason", r.missing_field_counts)
@@ -101,7 +85,6 @@ class S4_TheGateCanFail(unittest.TestCase):
                          "same admitted set, but the silent version returns no loss information")
 
     def test_rule_4_zero_evidence_halts(self):
-        """A claim with no admissible records is not a finding."""
         with self.assertRaises(CG.ClaimError):
             CG.Claim("impossible", requires=["a_field_no_record_has"]).admit(self.corpus)
 

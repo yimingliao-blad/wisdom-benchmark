@@ -1,15 +1,4 @@
-"""M6-T12/S2 — acceptance for the per-model table.
-
-THE DEFECT THIS GUARDS is arithmetically valid and semantically wrong: computing the compliance rate
-over PLANNED instead of OBSERVED. On the real M5 records that is 213/264 = 0.807 versus the correct
-213/216 = 0.986 -- an 18-point swing that passes every structural check, because the sums reconcile
-and the JSON is fine. It just silently reports models as less compliant because WE did not call them.
-
-RULE 12: the table is built from REAL stored records, not fixtures, because a run that finishes green
-but cannot build its planned analysis is an incomplete design found after the money is spent.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_analyze -v
-"""
+"""Analysis aggregation and denominators."""
 import json
 import os
 import unittest
@@ -22,7 +11,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def real_setup():
-    """A manifest matching the REAL M5 records, so the table is exercised on emitted output."""
     recs = [json.loads(l) for l in open(os.path.join(HERE, "runs", "or_futurex_M5",
                                                      "records.jsonl")) if l.strip()]
     items = {i["item_id"]: i for i in json.load(open(os.path.join(HERE, "runs", "fx_smoke4.json")))}
@@ -33,7 +21,6 @@ def real_setup():
 
 
 class ItComputesFromRealEmittedOutput(unittest.TestCase):
-    """Rule 12 downstream-usability, proven rather than asserted."""
 
     @classmethod
     def setUpClass(cls):
@@ -66,7 +53,6 @@ class TheDenominatorIsTheWholePoint(unittest.TestCase):
         self.assertEqual(t["compliance_rate"], round(t["complied"] / t["OBSERVED"], 4))
 
     def test_the_SEEDED_DEFECT_wrong_denominator_gives_a_different_answer(self):
-        """If these ever coincide, the test proves nothing -- assert they genuinely differ."""
         t = self.t["totals"]
         wrong = round(t["complied"] / t["planned"], 4)
         self.assertNotAlmostEqual(t["compliance_rate"], wrong, places=2)
@@ -80,7 +66,6 @@ class TheDenominatorIsTheWholePoint(unittest.TestCase):
         self.assertEqual(t["coverage_rate"], round(t["OBSERVED"] / t["planned"], 4))
 
     def test_a_model_with_no_observations_gets_None_not_zero(self):
-        """A rate of 0.0 reads as 'complied never'; None reads as 'we never saw it'."""
         m, _ = real_setup()
         t = AN.per_model_table(m, [], strict=False)
         for row in t["rows"].values():
@@ -116,7 +101,6 @@ class ItRefusesToBuildADishonestTable(unittest.TestCase):
         self.assertEqual(t["totals"]["MISSING"], t["totals"]["planned"] - 5)
 
     def test_a_bucket_mismatch_raises_rather_than_rounding(self):
-        """Defensive: if the partition ever breaks, the table must refuse to exist."""
         m = json.loads(json.dumps(self.m))
         m["units"].append(dict(m["units"][0], unit_id="duplicate-id"))
         # a duplicated unit_id makes the per-model set smaller than the unit list; the sum check

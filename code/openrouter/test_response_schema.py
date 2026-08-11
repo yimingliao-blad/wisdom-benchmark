@@ -1,20 +1,10 @@
-"""M6-T5/S4 — acceptance for the response-envelope validator and extraction contract.
-
-THESE ARE CONTRACT TESTS, NOT BEHAVIOURAL EVIDENCE. There are no real raw bodies to test against:
-0 of 1,018 stored records carry one, and raw_responses.jsonl began today with no paid call since.
-The fixtures are constructed from the documented envelope. They prove the validator matches the
-contract; they do NOT prove any provider emits these shapes. Recording that distinction here because
-blurring it is a mistake this project has made before.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_response_schema -v
-"""
+"""Response schema parsing."""
 import unittest
 
 import response_schema as RS
 
 
 def envelope(content="Reasoned.\n\n\\boxed{No}", **over):
-    """A well-formed body of the shape the stored records imply."""
     msg = {"content": content, "role": "assistant"}
     msg.update(over.pop("message", {}))
     e = {"choices": [{"message": msg, "finish_reason": "stop"}],
@@ -28,7 +18,6 @@ def rules(raw, **kw):
 
 
 class TheNegativeControl(unittest.TestCase):
-    """If a well-formed body fails, the validator would reject the real run."""
 
     def test_a_well_formed_envelope_passes(self):
         ok, v = RS.validate_envelope(envelope())
@@ -39,8 +28,6 @@ class TheNegativeControl(unittest.TestCase):
         self.assertTrue(ok)
 
     def test_null_content_is_allowed_by_the_SHAPE_check(self):
-        """An empty reply is a COMPLETENESS question (EMPTY_HTTP), not a shape violation. The two
-        layers must not duplicate each other's judgement."""
         ok, _ = RS.validate_envelope(envelope(content=None))
         self.assertTrue(ok)
 
@@ -56,7 +43,6 @@ class EveryMalformationIsRejected(unittest.TestCase):
         self.assertIn("choices_empty", rules({"choices": []}))
 
     def test_more_choices_than_requested_is_FATAL(self):
-        """Reading [0] of a 3-choice reply silently discards two (audit C5)."""
         e = envelope()
         e["choices"] = e["choices"] * 3
         self.assertIn("choices_count_unexpected", rules(e))
@@ -70,7 +56,6 @@ class EveryMalformationIsRejected(unittest.TestCase):
         self.assertIn("content_missing", rules(e))
 
     def test_content_as_a_PARTS_ARRAY_is_flagged_not_joined(self):
-        """Joining parts would invent a string the model never emitted."""
         e = envelope(content=[{"type": "text", "text": "a"}, {"type": "text", "text": "b"}])
         r = rules(e)
         self.assertIn("content_is_parts_array", r)

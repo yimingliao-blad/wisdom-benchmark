@@ -1,17 +1,4 @@
-"""M6-T14/S2 (L-W) — acceptance that the RUNNER CALLS THE LEAVES.
-
-THE DEFECT THIS GUARDS, found 2026-08-08 by grepping the runner's imports rather than trusting the
-green suite: 185 tests proved 13 modules, and `run_openrouter.py` imported TWO of them. The paid path
-carried its own inline resume set (`except Exception: pass` on every malformed line), its own spend
-counter, and a NAIVE provider round-robin -- the exact code schedule.py replaced after it produced a
-101-call single-provider burst on the real 3,700-unit manifest.
-
-A tested module the money-spending path never calls buys nothing. These tests fail if the wiring is
-removed, so the isolated suites cannot go green over a runner that ignores them again.
-
-Offline: llm_api.openrouter_chat is replaced with a scripted fake. NO network, NO spend.
-Run: python3 -m unittest test_wiring -v
-"""
+"""End-to-end wiring of the dispatch path."""
 import json
 import os
 import shutil
@@ -35,7 +22,6 @@ ITEMS = os.path.join(HERE, "runs", "fx_smoke4.json")
 
 
 def fake_reply(prompt, model, max_tokens=4000, timeout=600, temperature=0.0, reasoning=None):
-    """A well-formed OpenRouter envelope with a compliant boxed answer, billed at a known cost."""
     text = "Reasoning: the series trends upward through the window.\n\\boxed{yes}"
     return text, {"choices": [{"message": {"content": text,
                                            "reasoning": "I considered the trend."},
@@ -45,8 +31,6 @@ def fake_reply(prompt, model, max_tokens=4000, timeout=600, temperature=0.0, rea
 
 
 class RunnerHarness(unittest.TestCase):
-    """Runs the REAL main() offline. Testing a re-implementation would prove nothing about the
-    function that spends the money."""
 
     def setUp(self):
         self.d = tempfile.mkdtemp()
@@ -103,7 +87,6 @@ class TheRunnerActuallyCallsTheLeaves(RunnerHarness):
         self.assertTrue(m["manifest_id"])
 
     def test_it_writes_a_SCHEDULE_and_dispatches_in_ITS_order(self):
-        """The regression that matters: the runner used to build its own naive round-robin."""
         self.run_main(workers=1)
         s = json.load(open(os.path.join(self.out, "schedule.json")))
         m = json.load(open(os.path.join(self.out, "manifest.json")))
@@ -144,7 +127,6 @@ class TheRunnerActuallyCallsTheLeaves(RunnerHarness):
         return longest
 
     def test_every_record_carries_the_SHARED_identity(self):
-        """One identity space for records, ledger and manifest -- audit D6."""
         self.run_main()
         m = json.load(open(os.path.join(self.out, "manifest.json")))
         planned = {u["unit_id"] for u in m["units"]}
@@ -187,7 +169,6 @@ class ResumeGoesThroughThePersistenceLeaf(RunnerHarness):
         self.assertEqual(total1, total2, "the resumed run paid twice for the same attempts")
 
     def test_a_DIFFERENT_plan_in_the_same_run_dir_is_REFUSED(self):
-        """Resuming across two different planned experiments would mix them in one records file."""
         self.run_main()
         smaller = self.roster[:2]
         json.dump(smaller, open(self.rpath, "w"))
@@ -203,8 +184,6 @@ class ResumeGoesThroughThePersistenceLeaf(RunnerHarness):
 
 
 class C5_PerProviderConcurrencyIsENFORCED(RunnerHarness):
-    """Codex C5: the schedule RECORDED per_provider and nothing enforced it, so the global worker
-    count was the only real bound and N workers could still land on one vendor at once."""
 
     def _observing_transport(self, delay=0.02):
         live, peak, lk = {}, {}, threading.Lock()
@@ -233,7 +212,6 @@ class C5_PerProviderConcurrencyIsENFORCED(RunnerHarness):
                              f"per-provider cap breached: observed peak {peak}")
 
     def test_the_test_can_actually_SEE_a_breach(self):
-        """If the observer could never record a peak above the cap, the check above is vacuous."""
         t, peak = self._observing_transport()
         llm_api.openrouter_chat = t
         self.run_main(workers=8, per_provider=8)
@@ -241,8 +219,6 @@ class C5_PerProviderConcurrencyIsENFORCED(RunnerHarness):
                            f"the observer cannot detect concurrency at all; peak={peak}")
 
     def test_a_CHANGED_concurrency_policy_on_resume_is_REFUSED(self):
-        """schedule_id does not hash the concurrency policy, so comparing ids alone would let it
-        change silently and alter the load each provider actually sees."""
         self.run_main(workers=2, per_provider=4)
         with self.assertRaises(SystemExit) as cm:
             self.run_main(workers=2, per_provider=1)
@@ -260,7 +236,6 @@ class TheClosingChecksRunOnRealOutput(RunnerHarness):
         self.assertEqual(vr["counts"]["MATCH"], len(self.records()))
 
     def test_a_MISASSOCIATED_record_would_HALT_the_run(self):
-        """The check must be able to fail, or its passing means nothing."""
         self.run_main()
         m = json.load(open(os.path.join(self.out, "manifest.json")))
         recs = self.records()
@@ -270,9 +245,6 @@ class TheClosingChecksRunOnRealOutput(RunnerHarness):
 
 
 class TheSTAGEDRunAbsorbsTheSmokeIntoTheFullRun(RunnerHarness):
-    """Owner design 2026-08-08: "incorporate the smoke tests in the full-test ... so we won't cost
-    extra." The smoke slice is a SUBSET of the frozen manifest, so its calls are part of the full
-    run's dataset rather than an extra purchase."""
 
     def _slice_file(self, n=2):
         items = json.load(open(ITEMS))[:n]
@@ -317,22 +289,17 @@ class TheSTAGEDRunAbsorbsTheSmokeIntoTheFullRun(RunnerHarness):
         self.assertGreater(after_full["total"], after_smoke["total"])
 
     def test_the_STAGE_can_be_capped_without_declaring_the_WHOLE_plans_size(self):
-        """Defect found 2026-08-08 when the BTF dry run halted: --max-calls was checked against the
-        whole manifest BEFORE --only-items narrowed the stage, so a 6-item gate out of a 110-item
-        plan had to declare --max-calls 4070 to buy 222 calls. That is the opposite of a ceiling."""
         sf, _ = self._slice_file(2)
         self.run_main(only_items=sf, max_calls=8)      # stage is 2 x 4 = 8; the plan is 16
         self.assertEqual(len(self.records()), 8)
 
     def test_a_cap_BELOW_the_stage_still_HALTS(self):
-        """The relaxation must not have removed the ceiling."""
         sf, _ = self._slice_file(2)
         with self.assertRaises(SystemExit) as cm:
             self.run_main(only_items=sf, max_calls=3)
         self.assertIn("would make 8 calls", str(cm.exception))
 
     def test_resume_counts_toward_the_cap_correctly(self):
-        """After the stage, the remainder is 8 units -- the cap must bound THAT, not 16."""
         sf, _ = self._slice_file(2)
         self.run_main(only_items=sf)
         self.run_main(max_calls=8)                      # 8 already bought, 8 remain
@@ -347,7 +314,6 @@ class TheSTAGEDRunAbsorbsTheSmokeIntoTheFullRun(RunnerHarness):
 
 
 class TheGATEBlocksTheExpensiveRemainder(RunnerHarness):
-    """A gate that only reports is not a gate."""
 
     def test_it_REFUSES_to_start_with_no_evaluation_at_all(self):
         sf, _ = self._sf()
@@ -383,9 +349,6 @@ class TheGATEBlocksTheExpensiveRemainder(RunnerHarness):
 
 
 class C10_TheRecoveryPathIsREHEARSED(RunnerHarness):
-    """Codex C10: write-once plus halt-on-mismatch is the right default, but it makes in-place
-    repair impossible ON PURPOSE -- so the supersede / new-tag / recombine path must be proven to
-    work over a PARTIAL run, or a 3,700-call run that dies halfway has no route forward at all."""
 
     def test_a_partial_run_recovers_via_SUPERSEDE_NEW_TAG_RECOMBINE(self):
         # 1. a partial run: one model only

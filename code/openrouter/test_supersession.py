@@ -1,20 +1,4 @@
-"""M6-T18 — a roster change supersedes the manifest in place; a failed call is not a completed one.
-
-TWO DEFECTS ARE GUARDED HERE.
-
-D-OR-18 is the dangerous one. `resume_state` marked a unit done whenever ANY row existed for it,
-never asking whether an answer arrived. On the real `or_futurex_fxgate` directory that was 255
-PROVIDER_ERROR rows from an org-budget 403: resume listed zero of them as todo, so a relaunch would
-have skipped 255 units the models never answered. Worse, the two readers of the same row disagreed —
-`analyze.py` called PROVIDER_ERROR UNOBSERVED (excluded from the compliance denominator) while resume
-called it done — so those units would have stayed unobserved permanently, with the loss concentrated
-on whichever models were in flight when the 403 hit.
-
-The supersession half is the owner's: "what if I update model? there is no reason" to throw away
-calls a still-rostered model already answered.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_supersession -v
-"""
+"""Manifest supersession and record retention."""
 import json
 import os
 import unittest
@@ -33,7 +17,6 @@ def roster(*ids):
 
 
 def record(mani, model, item_id, verdict="COMPLETE", **over):
-    """A record shaped like the real ones, correct by construction unless a test breaks it."""
     u = next(u for u in mani["units"]
              if u["model"] == model and u["item_id"] == item_id and u["arm"] == "original")
     rec = {"model": model, "item_id": item_id, "arm": "original", "unit_id": u["unit_id"],
@@ -44,13 +27,11 @@ def record(mani, model, item_id, verdict="COMPLETE", **over):
 
 
 def undelivered(mani, model, item_id, verdict="PROVIDER_ERROR"):
-    """What a 403 actually leaves behind: no body, no finish_reason, no prompt hash, $0."""
     return record(mani, model, item_id, verdict=verdict,
                   finish_reason=None, text="", ok=False, prompt_sha=None, cost=0)
 
 
 class AFailedCallIsNotACompletedOne(unittest.TestCase):
-    """D-OR-18. The seeded defect IS the old behaviour, so these fail against the previous code."""
 
     def setUp(self):
         self.m = MF.build(roster("a/one", "a/two"), ITEMS, arms=("original",), bench="futurex")
@@ -74,9 +55,6 @@ class AFailedCallIsNotACompletedOne(unittest.TestCase):
             self.assertEqual(rs["done"], 0, v)
 
     def test_a_delivered_but_UNSCOREABLE_reply_is_kept_not_re_bought(self):
-        """TRUNCATED cost money and the model spoke; re-buying it would resample the very outcome
-        the study exists to count. EMPTY_PARSE indicts our parser, and an identical call cannot fix
-        a parser. Neither is a reason to spend again."""
         for v in ("TRUNCATED", "EMPTY_PARSE", "UNDECIDED", "NO_ANSWER"):
             rs = PS.resume_state(self.m, [record(self.m, "a/one", ITEMS[0]["item_id"], verdict=v)])
             self.assertEqual(rs["done"], 1, f"{v} delivered a body and must not be re-bought")
@@ -94,8 +72,6 @@ class AFailedCallIsNotACompletedOne(unittest.TestCase):
             PS.resume_state(self.m, [bad])
 
     def test_a_record_with_no_verdict_falls_back_to_the_SIDECAR_rule(self):
-        """'A body arrived iff the provider reported a finish_reason' — the rule finalize already
-        uses. One rule, not a second one invented here."""
         m, iid = self.m, ITEMS[0]["item_id"]
         no_body = record(m, "a/one", iid); no_body.pop("completeness"); no_body["finish_reason"] = None
         with_body = record(m, "a/two", iid); with_body.pop("completeness")
@@ -134,7 +110,6 @@ class SupersedingAPlanKeepsTheWorkAlreadyBought(unittest.TestCase):
                          [self.prior["manifest_id"], a["manifest_id"]])
 
     def test_the_id_ignores_the_lineage_so_it_still_identifies_the_PLAN(self):
-        """Two runs that plan the same thing must collide, whatever they were superseded from."""
         a = MF.supersede(self.prior, self.kept, ITEMS, bench="futurex", reason="one route")
         plain = MF.build(self.kept, ITEMS, bench="futurex")
         self.assertEqual(a["manifest_id"], plain["manifest_id"])
@@ -149,7 +124,6 @@ class SupersedingAPlanKeepsTheWorkAlreadyBought(unittest.TestCase):
         self.assertTrue(all(r["model"] == "a/three" for r in part["out_of_plan"]))
 
     def test_a_MISASSOCIATED_record_still_fails_after_a_supersession(self):
-        """The per-record proof never depended on the roster, and a supersession does not excuse it."""
         new = MF.supersede(self.prior, self.kept, ITEMS, bench="futurex", reason="dropped a/three")
         bad = record(self.prior, "a/one", ITEMS[0]["item_id"], prompt_sha="deadbeefdeadbeef")
         self.assertEqual(len(PS.partition_by_manifest(new, [bad])["misassociated"]), 1)
@@ -167,12 +141,6 @@ class SupersedingAPlanKeepsTheWorkAlreadyBought(unittest.TestCase):
 
 
 class WriteOnceReopensOnlyForADeclaredSuccessor(unittest.TestCase):
-    """The in-place write is checked against the LINEAGE, not merely allowed by a flag.
-
-    Found by the dry run, not by design: MF.save refused the supersession outright, because
-    write-once could not tell a declared successor from a stray overwrite. A flag alone would have
-    made the guard advisory, which is how a plan's coverage arithmetic silently changes underneath it.
-    """
 
     def setUp(self):
         import tempfile
@@ -221,7 +189,6 @@ class WriteOnceReopensOnlyForADeclaredSuccessor(unittest.TestCase):
 
 
 class OnTheRealHaltedRun(unittest.TestCase):
-    """The numbers the subtask commits to, measured on the actual directory. Read-only."""
 
     @classmethod
     def setUpClass(cls):
@@ -256,14 +223,6 @@ if __name__ == "__main__":
 
 
 class ASupersededRunCanStillProduceItsTable(unittest.TestCase):
-    """D-OR-19 — the conflation one layer later.
-
-    M6-T18 taught RESUME about a superseded plan and left the DELIVERABLE refusing it, so a run
-    could be executed and resumed but never finalized -- a wall at the end, after every call is
-    paid for. And in non-strict mode the numbers were right while the header lied: admitted_records
-    counted all 1,131 records beside a planned 2,750, reading as 41% coverage where the truth was
-    401/2,750 = 14.6%.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -290,7 +249,6 @@ class ASupersededRunCanStillProduceItsTable(unittest.TestCase):
         self.assertEqual(t["n_planned"], 2750)
 
     def test_an_UNDECLARED_roster_change_is_still_refused(self):
-        """The guard is not removed, only given a declared door."""
         plain = MF.build(self.roster25, self.items, arms=("original",), bench="futurex")
         self.assertIsNone(plain.get("supersedes"))
         with self.assertRaises(self.AN.AnalysisError) as cm:
@@ -319,16 +277,6 @@ class ASupersededRunCanStillProduceItsTable(unittest.TestCase):
 
 
 class ThePostRunChecksDescribeTHISPlan(unittest.TestCase):
-    """D-OR-21 — the runner's own end-of-run checks spanned the superseded plan.
-
-    D-OR-19 taught analyze about out-of-plan records and left the RUNNER's invariant check and
-    failure ledger reading everything in the directory. On the 2026-08-10 paid smoke that meant the
-    run HALTED naming openai/gpt-5.6-sol, a model not in the roster, over a record inherited from the
-    August 8 attempt; and the ledger reported 277 non-clean records of which 255 were inherited 403s,
-    against 5 genuine failures in the stage that had just run.
-
-    Inherited noise does not merely mislead. It is where a real failure hides.
-    """
 
     def setUp(self):
         import tempfile
@@ -347,7 +295,6 @@ class ThePostRunChecksDescribeTHISPlan(unittest.TestCase):
                 fh.write(json.dumps(r) + "\n")
 
     def bad_row(self, model):
-        """COMPLETE with no extractable answer -- the exact shape that HALTed the smoke."""
         return {"model": model, "item_id": "q1", "arm": "original", "completeness": "COMPLETE",
                 "answer_extractable": False, "compliant": True}
 
@@ -360,14 +307,12 @@ class ThePostRunChecksDescribeTHISPlan(unittest.TestCase):
         self.RO.verify_records(self.path, planned_models={"in/plan"})   # must not raise
 
     def test_the_SAME_defect_IN_plan_still_halts(self):
-        """Scoping must not become a way to stop noticing."""
         self.write([self.good_row("in/plan"), self.bad_row("in/plan")])
         with self.assertRaises(SystemExit) as cm:
             self.RO.verify_records(self.path, planned_models={"in/plan"})
         self.assertIn("COMPLETE with no extractable answer", str(cm.exception))
 
     def test_unscoped_still_checks_everything(self):
-        """A directory that was never superseded keeps the old behaviour exactly."""
         self.write([self.bad_row("anyone/at-all")])
         with self.assertRaises(SystemExit):
             self.RO.verify_records(self.path, planned_models=None)
@@ -384,14 +329,6 @@ class ThePostRunChecksDescribeTHISPlan(unittest.TestCase):
 
 
 class ARequeuedUnitIsNotAUnitBoughtTwice(unittest.TestCase):
-    """D-OR-18's consequence, surfaced by the paid smoke through an existing invariant test.
-
-    Making a failed call re-queue means a resumed directory legitimately holds two rows for one
-    unit: the attempt that delivered nothing, then the answer. `find_duplicates` reports both, which
-    is correct as DATA — but the invariant that matters is "never paid twice", and conflating them
-    would fail every resumed run. The tempting fix is to delete the failed row, which destroys the
-    evidence D-OR-16 exists to keep.
-    """
 
     def setUp(self):
         self.m = MF.build(roster("a/one"), ITEMS, arms=("original",), bench="futurex")
@@ -407,7 +344,6 @@ class ARequeuedUnitIsNotAUnitBoughtTwice(unittest.TestCase):
         self.assertEqual(PS.bought_twice(rows), {})
 
     def test_TWO_DELIVERED_answers_for_one_unit_IS_the_defect(self):
-        """The check must still catch real double-buying, or scoping it was just switching it off."""
         rows = [record(self.m, "a/one", self.iid), record(self.m, "a/one", self.iid)]
         got = PS.bought_twice(rows)
         self.assertEqual(list(got), [MF.unit_id("a/one", self.iid, "original")])

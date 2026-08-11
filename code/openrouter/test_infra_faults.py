@@ -1,26 +1,4 @@
-"""M6-T23 — one policy for infrastructure faults: retry 3, pause the model, halt the account.
-
-JUDGE_GATE_BYPASS_REASON='authors no judge. Every call is stubbed and CR.review is replaced by a
-constant lambda, so no LLM judge, oracle or model call runs. The gate matches on the llm_api import
-and on the word verdict, which appears only where this asserts which verdicts stop being written.'
-
-Owner, 2026-08-10: "if it is the API budget issue, it is equivalent to network failure, and you
-should stop, and no other rules you should apply. I think you have made a lot of extra useless
-work." … "retry 3 times, if still failed halt."
-
-THE CATEGORY ERROR THIS FIXES. An infrastructure failure was being treated as a kind of RESULT --
-given a verdict, written as a record, then read by the denominator, resume and the duplicate checks.
-Measured on the run that crashed: 156 records for calls that delivered nothing and cost $0.0003, and
-136 of 136 duplicate units traced to them. Three defects (D-OR-18, D-OR-22, D-OR-25) existed only to
-manage records that should never have been written.
-
-**A failed call is not a result. It is the absence of one.**
-
-The tests that matter most here are the OVER-REACH guards: a rule that swallows real model behaviour
-would be a worse defect than the one it replaces.
-
-Offline. Transport stubbed. No key read, nothing bought.
-"""
+"""Infrastructure fault classification, retry and pause behaviour."""
 import json
 import os
 import shutil
@@ -55,7 +33,6 @@ def err(msg="boom", **kw):
 
 
 class TheClassifierAnswersTheOwnersQuestion(unittest.TestCase):
-    """'Is it purely lagging?' -- not 'which HTTP bucket is this'."""
 
     def test_transient_is_what_waiting_could_fix(self):
         for e in (err(status=500), err(status=503), err(status=504),
@@ -68,14 +45,10 @@ class TheClassifierAnswersTheOwnersQuestion(unittest.TestCase):
             self.assertEqual(R.classify_fault(err(status=s))[0], R.TERMINAL_ACCOUNT, s)
 
     def test_a_429_MEANING_quota_exhausted_is_an_account_fault_not_a_retry(self):
-        """Codex C5. The live 403 arrived as a MESSAGE, not a distinct status; a 429 can do the same.
-        Retrying an exhausted allowance is just spending the wall clock."""
         e = err("monthly quota exceeded for this key", status=429)
         self.assertEqual(R.classify_fault(e)[0], R.TERMINAL_ACCOUNT)
 
     def test_a_429_WITH_retry_after_is_still_transient(self):
-        """The discriminator must not become 'any 429 is fatal' -- that would stop runs on ordinary
-        throttling, which is the single most common recoverable fault."""
         e = err("rate limit exceeded, slow down", status=429, retry_after=12)
         self.assertEqual(R.classify_fault(e)[0], R.TRANSIENT)
 
@@ -84,7 +57,6 @@ class TheClassifierAnswersTheOwnersQuestion(unittest.TestCase):
             self.assertEqual(R.classify_fault(err(status=s))[0], R.TERMINAL_REQUEST, s)
 
     def test_an_UNKNOWN_fault_is_transient_and_SAYS_it_is_unclassified(self):
-        """Silently calling an unrecognised fault TERMINAL would stop a run for no stated reason."""
         policy, klass = R.classify_fault(err(status=418))
         self.assertEqual(policy, R.TRANSIENT)
         self.assertIn("unclassified", klass)
@@ -97,7 +69,6 @@ class TheClassifierAnswersTheOwnersQuestion(unittest.TestCase):
 
 
 class GapsAreExplainable(unittest.TestCase):
-    """Codex C9. Once a failed call writes nothing, every gap looks alike unless something says why."""
 
     def setUp(self):
         items = json.load(open(os.path.join(HERE, "runs", "_frozen_fxgate_2026-08-08",
@@ -126,7 +97,6 @@ class GapsAreExplainable(unittest.TestCase):
         self.assertEqual(g["counts"]["never_dispatched"], g["n_planned"])
 
     def test_aggregate_transient_health_is_visible(self):
-        """Codex C14: many short transients that each clear never trip a per-unit rule."""
         faults = [{"model": BAD_MODEL, "classification": "api:429"} for _ in range(7)]
         h = PS.transient_health(faults)
         self.assertEqual(h["n_faults"], 7)
@@ -134,7 +104,6 @@ class GapsAreExplainable(unittest.TestCase):
 
 
 class TheUniquenessGateCountsPAYMENTS(unittest.TestCase):
-    """D-OR-25, the third reader of 'duplicate' -- it crashed the run after all work was done."""
 
     def setUp(self):
         items = json.load(open(os.path.join(HERE, "runs", "_frozen_fxgate_2026-08-08",
@@ -155,7 +124,6 @@ class TheUniquenessGateCountsPAYMENTS(unittest.TestCase):
         self.assertEqual(PS.require_unique_within_run(rows), 2)
 
     def test_TWO_delivered_answers_still_RAISE(self):
-        """Scoping the check must not become a way to stop noticing."""
         with self.assertRaises(PS.PersistenceError) as cm:
             PS.require_unique_within_run([self.row(), self.row()])
         self.assertIn("PAID FOR more than once", str(cm.exception))
@@ -236,10 +204,8 @@ def _run(tag, status, msg, n_items=2):
 
 
 class OnTheRealDispatchPath(unittest.TestCase):
-    """The policy, end to end through the actual runner."""
 
     def test_a_persistent_transient_PAUSES_ONE_MODEL_and_the_others_finish(self):
-        """The owner's ruling on Codex C1: no silent holes, but no stop-the-world either."""
         r = _run("infra_transient", 503, "upstream unavailable")
         self.assertIn("PAUSED", r["out"])
         self.assertIn(BAD_MODEL, r["out"])
@@ -278,11 +244,8 @@ class OnTheRealDispatchPath(unittest.TestCase):
 
 
 class ItDoesNotSwallowRealModelBehaviour(unittest.TestCase):
-    """The over-reach guards. A rule that ate a real outcome would be worse than the original defect."""
 
     def test_an_ANSWER_that_will_not_parse_is_a_RESULT_not_a_fault(self):
-        """Codex C8. A protocol parse failure is transient; an ANSWER parse failure is the model's
-        behaviour, and conflating them would rebuild the category error inside the new classifier."""
         r = _run("infra_noswallow", 503, "upstream unavailable")
         good = [x for x in r["records"] if x["model"] == OK_MODEL]
         self.assertTrue(good)

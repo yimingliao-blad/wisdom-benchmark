@@ -1,17 +1,4 @@
-"""M6-T19 — the model list is DATA, and the code never learns a model's name.
-
-Owner, 2026-08-09: "you should make the model list un-coupled with the project. we can provide any
-list of models with model name to make it. update the whole plan so there is no hard-coded items as
-model."
-
-Two things are guarded:
-  1. roster_build.py turns bare names into a complete, sourced roster, and REFUSES rather than
-     inventing any field it cannot derive or was not told.
-  2. NO MODEL ID IS HARD-CODED IN THE PIPELINE. That is checked by scanning the source, because a
-     rule nothing enforces comes back the next time someone needs "just one quick model".
-
-Offline. The catalog is read from a cached fixture. No network, no spend.
-"""
+"""Roster construction from a model list."""
 import importlib.util
 import json
 import os
@@ -115,8 +102,6 @@ class NamesInARosterOut(unittest.TestCase):
         self.assertIn("repeats", str(cm.exception))
 
     def test_an_unpublished_cutoff_stays_NULL_and_is_never_guessed(self):
-        """The release date is right there and is NOT used. A guessed cutoff would silently admit a
-        contaminated model into a contamination-sensitive study."""
         row = self.run_build("vendor-a/model-2\n")[0]
         self.assertIsNone(row["cutoff"])
         self.assertEqual(row["basis"], "UNKNOWN")
@@ -146,8 +131,6 @@ class NamesInARosterOut(unittest.TestCase):
         self.assertIn("no 'why'", str(cm.exception))
 
     def test_an_override_for_a_model_not_in_the_list_is_refused(self):
-        """A stale instruction, not a harmless no-op: it silently does nothing while reading as
-        though it applies."""
         with self.assertRaises(RB.RosterError) as cm:
             self.run_build("vendor-a/model-1\n",
                            overrides={"vendor-a/model-2": {"cutoff": "2020-01", "why": "x"}})
@@ -170,7 +153,6 @@ class NamesInARosterOut(unittest.TestCase):
 
 
 class NoModelNameIsBakedIntoThePipeline(unittest.TestCase):
-    """The rule, enforced by a scan rather than by good intentions."""
 
     # A real OpenRouter id: vendor/slug where the vendor is a known publisher.
     PATTERN = re.compile(
@@ -202,12 +184,6 @@ class NoModelNameIsBakedIntoThePipeline(unittest.TestCase):
                          "in a model-list file and let survey/roster_build.py derive the rest")
 
     def test_the_scanner_would_CATCH_a_planted_id(self):
-        """A scan that cannot fail proves nothing.
-
-        The bait is ASSEMBLED rather than written literally: on the first run this file was itself
-        the only offender the scan reported, which is the check working -- and exactly why the bait
-        must not be a literal in the tree the scan walks.
-        """
         bait = 'M = "' + "anthropic" + "/" + 'claude-haiku-4.5"\n'
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, "x.py")

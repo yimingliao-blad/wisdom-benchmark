@@ -1,11 +1,4 @@
-"""M6-T7/S4 — acceptance for duplicate handling and resume fidelity.
-
-The S5 failure is specific: the resume key and the manifest key AGREE TODAY and nothing compares
-them. They would diverge silently the moment either definition changed, and the symptom would be
-skipped work that looks like completed work.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_persistence -v
-"""
+"""Record persistence, resume and duplicate detection."""
 import json
 import os
 import unittest
@@ -28,7 +21,6 @@ def rec(u, verdict="COMPLETE", **kw):
 
 
 class OneKeyNotTwo(unittest.TestCase):
-    """S5: two key definitions that agree and are never compared."""
 
     def test_the_resume_key_is_the_manifest_key(self):
         m = mf()
@@ -61,8 +53,6 @@ class DuplicatesAreDataNotSilentlyResolved(unittest.TestCase):
         self.assertEqual(PS.require_unique_within_run(recs), len(recs))
 
     def test_a_MISSING_verdict_is_not_a_disagreement(self):
-        """The 55x overstatement I made: 222 'conflicts' were mostly absent verdicts, not different
-        ones. The real count was 4."""
         u = self.m["units"][0]
         pair = [rec(u, "COMPLETE"), rec(u, None)]
         self.assertEqual(PS.verdict_conflicts(pair), {},
@@ -75,13 +65,6 @@ class DuplicatesAreDataNotSilentlyResolved(unittest.TestCase):
         self.assertEqual(list(c.values())[0]["verdicts"], ["COMPLETE", "NO_ANSWER"])
 
     def test_the_real_corpus_has_exactly_the_measured_conflicts(self):
-        """Pins the measurement over the FROZEN SNAPSHOT, which cannot move when a run lands.
-
-        This pin was originally taken over every run directory on disk and broke the moment the
-        FutureX gate stage added 222 records (237 -> 311 duplicates). Bumping the literal would
-        have been the wrong fix: it would break again on the next run and the pin would assert
-        nothing. The snapshot lives in claim_gate so there is exactly one definition of it.
-        """
         import claim_gate as CG
         corpus = CG.load_snapshot(ok_only=False)
         dups = PS.find_duplicates(corpus)
@@ -90,11 +73,6 @@ class DuplicatesAreDataNotSilentlyResolved(unittest.TestCase):
         self.assertEqual(len(conflicts), 4, "GENUINELY conflicting verdicts, not 222")
 
     def test_the_INVARIANT_holds_over_the_WHOLE_corpus_including_new_runs(self):
-        """The count is frozen; the property must hold for every run ever made.
-
-        A duplicated unit within ONE run would mean the same call was bought twice, which no future
-        run may ever do -- so that is checked unfrozen, across everything on disk.
-        """
         import claim_gate as CG
         import collections as _c
         import glob as _g
@@ -130,8 +108,6 @@ class ResumeIsFaithful(unittest.TestCase):
         self.assertEqual(PS.resume_state(self.m, recs)["todo"], [])
 
     def test_resume_REFUSES_when_a_record_is_not_in_the_manifest(self):
-        """A record for an unplanned unit means the manifest changed under the run; continuing
-        would mix two planned universes in one output file."""
         recs = [rec(self.m["units"][0])]
         recs[0]["model"] = "someone/not-planned"
         with self.assertRaises(PS.PersistenceError) as cm:
@@ -146,7 +122,6 @@ class ResumeIsFaithful(unittest.TestCase):
 
 
 class CombiningRunsIsANamedDecision(unittest.TestCase):
-    """Nondeterminism means a second observation is not a correction of the first."""
 
     def test_combining_is_forbidden_by_default(self):
         with self.assertRaises(PS.PersistenceError) as cm:

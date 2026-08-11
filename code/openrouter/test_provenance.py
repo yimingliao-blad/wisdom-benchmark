@@ -1,15 +1,4 @@
-"""M6-T13/S2 — acceptance for the provenance bundle.
-
-THE DEFECT THIS GUARDS: a published table that cannot be traced back to the code and artifacts that
-produced it. Six months on, "compliance was 0.986" is unfalsifiable unless the bundle pins WHICH
-records, WHICH manifest, and WHICH version of the verdict logic produced it -- completeness_review.py
-is one edit away from turning TRUNCATED into COMPLETE and moving every number in the table.
-
-E2: the bundle is a BINDING INDEX, not a semantic authority. That is asserted here, because the first
-version of this module got it backwards.
-
-Offline. No network. No spend.  Run: python3 -m unittest test_provenance -v
-"""
+"""Provenance bundle contents."""
 import json
 import os
 import tempfile
@@ -49,8 +38,6 @@ class ABundleBindsARealPublishedTable(unittest.TestCase):
         self.assertEqual(self.b["roster_hash"], self.m["roster_hash"])
 
     def test_it_binds_the_OUTPUT_too(self):
-        """E8: binding only the inputs makes a result reproducible in principle but not bound to the
-        artifact that was actually published."""
         self.assertEqual(self.b["table_sha"], PV._sha_obj(self.t))
         self.assertEqual(self.b["table_totals"], self.t["totals"])
 
@@ -61,8 +48,6 @@ class ABundleBindsARealPublishedTable(unittest.TestCase):
         self.assertEqual(len(self.b["code_sha"]), len(PV.CODE_FILES))
 
     def test_the_VERIFIER_is_bound_SEPARATELY_from_the_computation(self):
-        """Codex C9: provenance.py cannot change a number, but it decides which mismatches get
-        caught. Two different claims, so two different fields."""
         self.assertIn("provenance.py", self.b["verifier_sha"])
         self.assertNotIn("provenance.py", self.b["code_sha"])
 
@@ -77,7 +62,6 @@ class ABundleBindsARealPublishedTable(unittest.TestCase):
         self.assertEqual(again["bundle_id"], self.b["bundle_id"], "same inputs -> same id")
 
     def test_it_states_that_it_is_NOT_the_semantic_authority(self):
-        """E2. The bundle is the publication unit; the manifest and records remain authoritative."""
         note = self.b["authority_note"].lower()
         self.assertIn("not a semantic authority", note)
         self.assertIn("manifest", note)
@@ -89,7 +73,6 @@ class ABundleBindsARealPublishedTable(unittest.TestCase):
 
 
 class ItDetectsWhatChangedAfterPublication(unittest.TestCase):
-    """A bundle that cannot detect a change is decoration."""
 
     def setUp(self):
         self.m, self.s, self.t, self.recs = real_setup()
@@ -103,7 +86,6 @@ class ItDetectsWhatChangedAfterPublication(unittest.TestCase):
         self.assertTrue(any("table_sha" in m for m in v["mismatches"]))
 
     def test_edited_VERDICT_LOGIC_is_caught(self):
-        """completeness_review.py decides every verdict; a change to it invalidates the table."""
         b = json.loads(json.dumps(self.b))
         b["code_sha"]["completeness_review.py"] = "0" * 16
         v = PV.verify(b)
@@ -120,7 +102,6 @@ class ItDetectsWhatChangedAfterPublication(unittest.TestCase):
 
 
 class ItRefusesToPublishAPartialOrMismatchedBundle(unittest.TestCase):
-    """A partial bundle is worse than none: it looks authoritative and is not."""
 
     def setUp(self):
         self.m, self.s, self.t, self.recs = real_setup()
@@ -137,7 +118,6 @@ class ItRefusesToPublishAPartialOrMismatchedBundle(unittest.TestCase):
         self.assertIn("records not found", str(cm.exception))
 
     def test_a_schedule_from_a_DIFFERENT_manifest_is_refused(self):
-        """Binding artifacts that never ran together would assert a link that does not exist."""
         s = json.loads(json.dumps(self.s))
         s["manifest_id"] = "deadbeefdeadbeef"
         with self.assertRaises(PV.ProvenanceError) as cm:
@@ -162,8 +142,6 @@ class ItRefusesToPublishAPartialOrMismatchedBundle(unittest.TestCase):
 
 class ItRecordsTheDIRTYTreeRatherThanRefusing(unittest.TestCase):
     def test_git_state_is_recorded_not_enforced(self):
-        """A dirty tree is a FACT about the run. Recording it keeps the bundle honest; refusing to
-        build would just push people to publish without one."""
         g = PV.git_state()
         self.assertIn("clean", g)
         self.assertIn("head", g)

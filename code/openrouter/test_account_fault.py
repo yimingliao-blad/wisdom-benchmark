@@ -1,22 +1,4 @@
-"""D-OR-16 regression — an ACCOUNT-level fault halts the run and blames no model.
-
-JUDGE_GATE_BYPASS_REASON='this test AUTHORS NO JUDGE: it replaces CR.review with a constant lambda so
-that no LLM judge or oracle runs at all, exactly as test_quarantine.py already does. The gate matched
-the assignment to CR.review; there is no judge prompt, no grading, and no model call in this file.'
-
-WHAT HAPPENED (2026-08-08, live, mid-run). OpenRouter returned
-`HTTP 403 "Org member budget limit exceeded (monthly limit)"` to every model. The runner treated each
-403 as that model's failure and quarantined 22 of 37 models, none of which had misbehaved. Left
-unfixed it would have censored ~2,400 units against innocent models and A13 would have failed them
-for a loss that was never theirs. The discriminator is one question: *would this error have hit any
-model I called?*
-
-WHY IT NEEDS A TEST AND NOT A COMMENT. The fix is one `if` ahead of the quarantine branch. Anyone
-reordering that block, or adding a status to the retry set, silently restores the defect — and it is
-invisible offline, because it only shows up when a provider returns 4xx to everything at once.
-
-No network: the API call is stubbed. Run: python3 -m unittest test_account_fault -v
-"""
+"""Account-level API faults are run-fatal, not per-model."""
 import json
 import os
 import shutil
@@ -97,14 +79,9 @@ class AnAccountFaultIsRunFatalNotModelFatal(unittest.TestCase):
         self.assertIn("ACCOUNT's, not any model's", self.out)
 
     def test_NO_model_is_quarantined(self):
-        """22 of 37 were, live. Not one of them had misbehaved."""
         self.assertNotIn("QUARANTINED", self.out)
 
     def test_a_403_writes_a_FAULT_EVENT_and_NO_RECORD(self):
-        """M6-T23 changed this contract deliberately. A 403 delivered no body, so it is not a
-        result and must not sit in the records file where the denominator, resume and the
-        duplicate checks will read it -- that is what produced D-OR-18, D-OR-22 and D-OR-25 and
-        crashed the 2026-08-10 run."""
         self.assertEqual(self.recs, [], "a call that delivered nothing must write NO record")
         self.assertTrue(self.faults, "it must still be recorded -- as a fault event")
         f = self.faults[0]
@@ -114,8 +91,6 @@ class AnAccountFaultIsRunFatalNotModelFatal(unittest.TestCase):
         self.assertIn("requested_max_tokens", f, "D-OR-20 must survive the move to fault events")
 
     def test_the_work_is_left_re_runnable(self):
-        """The point of D-OR-16 and D-OR-18, now achieved by absence rather than by a re-queue
-        rule: with no record written, the unit is simply not done and resume buys it."""
         import persistence as PS
         mp = os.path.join(HERE, "runs", "or_futurex_acctfault", "manifest.json")
         if not os.path.exists(mp):
@@ -129,7 +104,6 @@ class AnAccountFaultIsRunFatalNotModelFatal(unittest.TestCase):
 
 
 class TheDiscriminatorIsTheSTATUSNotTheModel(unittest.TestCase):
-    """401/402/403 are account-level; a 500 is not, and must keep the per-model policy."""
 
     def test_the_account_fatal_set_is_exactly_the_auth_and_billing_codes(self):
         import run_openrouter as R

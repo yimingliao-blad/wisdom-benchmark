@@ -1,28 +1,4 @@
-"""M6-T22 — no invented budget cap; the model's own ceiling, and 12k as an observation.
-
-JUDGE_GATE_BYPASS_REASON='authors no judge. This test STUBS the reviewer to a constant lambda and
-stubs the transport, so no LLM judge, oracle or model call runs at all. The gate matches because the
-file imports llm_api and uses the word verdict while asserting that a long completion must NOT change
-one. Third occurrence of this shape today (test_account_fault.py, subtasks/22, here) -- an assignment
-TO CR.review is a stub, the opposite of authoring, and is worth tightening in the gate itself.'
-
-Owner, 2026-08-10: "there is no cap, which is your hallucination. the fix cap is the model's own
-max_token. but for practice, we should see if a model go beyond 12k which is already quite
-suspecious. no hard cap. and do not trap by the non-sense barrier."
-
-WHAT WAS WRONG. The runner asked `min(64000, model_ceiling)`. 64,000 has no source — not the
-model's, not the benchmark's, not the owner's. For a model whose real ceiling is 128,000 it silently
-halved the output; for one at 16,384 it did nothing. Worse, three roster models publish no
-`max_completion_tokens` at all, so their `cap` came from `context_length` — a number that counts the
-PROMPT and is not an output limit in any sense.
-
-THE THREE THINGS THAT WERE COLLAPSED, and are now separate:
-  the model's ceiling   ask for exactly it, or for nothing when it is not published
-  cost                  bounded by spend.Ledger against --max-spend, never by max_tokens
-  "this looks wrong"    an observation at 12k that halts nothing
-
-Offline. The transport is stubbed; no key is read and nothing is bought.
-"""
+"""Spend caps and token-ceiling selection."""
 import json
 import os
 import shutil
@@ -102,8 +78,6 @@ FAIL_HARNESS = HARNESS.replace(
 
 
 def _run_failing(d, tag):
-    """Every call raises, so every record takes the exception path -- where the fields used to be
-    missing entirely."""
     asked = os.path.join(d, f"asked_{tag}.json")
     argv = ["run_openrouter.py", "--items", os.path.join(d, "items.json"), "--bench", "futurex",
             "--tag", tag, "--models", os.path.join(d, "roster.json"),
@@ -135,7 +109,6 @@ class TheRequestCarriesNoInventedNumber(unittest.TestCase):
         shutil.rmtree(cls.d, ignore_errors=True)
 
     def test_a_model_with_a_PUBLISHED_ceiling_is_asked_for_exactly_that(self):
-        """THE SEEDED INVERSE: the old min(64000, cap) would have asked 64000 here."""
         self.assertEqual(self.asked.get(PUBLISHED), 128000,
                          f"asked {self.asked.get(PUBLISHED)}; 64000 means the invented cap is back")
 
@@ -157,7 +130,6 @@ class TheRequestCarriesNoInventedNumber(unittest.TestCase):
 
 
 class AnExplicitOverrideStillApplies(unittest.TestCase):
-    """--max-tokens survives for a DELIBERATE budget experiment; it is just no longer a default."""
 
     def test_the_override_reaches_every_model(self):
         d = tempfile.mkdtemp()
@@ -198,7 +170,6 @@ class TwelveKIsAnObservationNotABarrier(unittest.TestCase):
         self.assertIn("30,000", self.out)
 
     def test_it_changes_NOTHING_ELSE(self):
-        """Not a halt, not a quarantine, not a re-run. The whole point of 'no hard cap'."""
         by = {r["model"]: r for r in self.recs}
         self.assertNotIn("QUARANTINED", self.out)
         self.assertNotIn("HALT", self.out)
@@ -216,19 +187,6 @@ if __name__ == "__main__":
 
 
 class AFailedCallIsNotAnUnboundedRequest(unittest.TestCase):
-    """D-OR-20, found by the 2026-08-10 paid smoke rather than by any offline test.
-
-    CONTRACT MOVED by M6-T23: a failed call no longer writes a RECORD, it writes a FAULT EVENT --
-    a call that delivered nothing is not a result. The guarantee is unchanged and is asserted on
-    the fault event instead: what was requested is known before the call and stays true when it
-    fails, so a failure can never be mistaken for a deliberate unbounded request.
-
-    `requested_max_tokens` / `unbounded_request` were stamped AFTER the call returned, so a record
-    whose call raised carried neither. Read with .get() they came back None/False — identical to the
-    genuine "this model publishes no ceiling, so it was asked with no limit" case that M6-T22 had
-    just introduced. Five of 45 smoke records were that shape, and kimi-k2 (ceiling 100,352) read as
-    unbounded. An error wearing the costume of a legitimate value.
-    """
 
     @classmethod
     def setUpClass(cls):
@@ -260,7 +218,6 @@ class AFailedCallIsNotAnUnboundedRequest(unittest.TestCase):
                         "the field must be on EVERY fault event, or .get() re-creates the defect")
 
     def test_a_failed_call_writes_NO_record_at_all(self):
-        """The M6-T23 boundary, asserted from this direction too."""
         rp = os.path.join(HERE, "runs", "or_futurex_budgetfail", "records.jsonl")
         recs = ([json.loads(l) for l in open(rp, encoding="utf-8") if l.strip()]
                 if os.path.exists(rp) else [])
@@ -268,18 +225,6 @@ class AFailedCallIsNotAnUnboundedRequest(unittest.TestCase):
 
 
 class ACeilingMustFitBesideThePrompt(unittest.TestCase):
-    """D-OR-23 — found by the per-model smoke, and only findable there.
-
-    M6-T22 replaced the invented 64,000 cap with the model's own max_completion_tokens. Correct in
-    intent, but for some models that value EQUALS context_length, and asking for all of it leaves no
-    room for the prompt. kimi-k2.5 and kimi-k2.6 both publish 262,144 for both, and every call
-    returned HTTP 400: "you requested about 262465 tokens (321 of text input, 262144 in the output)".
-    2 of 25 models were completely uncallable; the other 23 were fine, so nothing narrower than a
-    per-model smoke would have caught it.
-
-    This is NOT the invented cap coming back. It is arithmetic the provider enforces, and it can only
-    lower a request that could not have been served at all.
-    """
 
     def setUp(self):
         import run_openrouter as R
@@ -297,7 +242,6 @@ class ACeilingMustFitBesideThePrompt(unittest.TestCase):
                              "output plus prompt must fit the window, which is the whole point")
 
     def test_a_ceiling_WELL_UNDER_the_context_is_untouched(self):
-        """The common case must not be altered — that would be the invented cap returning."""
         self.assertEqual(self.R.fits_in_context(64000, 200000, "x" * 960), 64000)
         self.assertEqual(self.R.fits_in_context(16384, 131072, "x" * 5000), 16384)
 
@@ -311,8 +255,4 @@ class ACeilingMustFitBesideThePrompt(unittest.TestCase):
         self.assertGreaterEqual(self.R.fits_in_context(1000, 100, "x" * 90000), 1)
 
     def test_the_real_endpoint_accepted_the_lowered_request(self):
-        """Recorded evidence, 2026-08-10: with 261,461 asked instead of 262,144, kimi-k2.5 returned
-        3,897 completion tokens and kimi-k2.6 returned 5,577 — both HTTP 200 where both had been
-        HTTP 400 four times each. The prompt was 512 chars, so the arithmetic is
-        262144 - (512//3 + 1) - 512 = 261461."""
         self.assertEqual(self.R.fits_in_context(262144, 262144, "x" * 512), 261461)

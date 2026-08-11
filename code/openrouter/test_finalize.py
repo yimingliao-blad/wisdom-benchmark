@@ -1,24 +1,4 @@
-"""M6-T15/S2 — acceptance for the six BLOCKING findings of the Codex verification re-gate.
-
-Codex returned NO-GO on 2026-08-08 (job task-mskugr8u-g4hm6m) with the summary judgement that the
-remaining flaw was not the old wiring gap but that "several publication and crash-resume guarantees
-are still post-hoc or optional -- a green runner can spend money, emit records, and still not
-produce the auditable deliverable the design promises."
-
-One class per finding:
-  C1  the spend ledger was written only after the executor finished, so a crash after paid calls
-      left records that resume would skip and a ledger that understated the spend
-  C2  analyze and provenance were never called by the paid path -- the same gap as the 11 unwired
-      modules, one layer out
-  C3  a layer-1 provisional COMPLETE could be published as final. NOTE: layer 1 NEVER self-certifies
-      (it always defers to a reader), so in real mode EVERY record is provisional -- this gate is the
-      normal path, not a corner case
-  C4  quarantined units became MISSING instead of CENSORED, breaking the promised partition
-  C5  per_provider was recorded in the schedule and enforced by nothing
-  C6  the raw sidecar was keyed on model/item/arm, so a retry could not be told from a first attempt
-
-Offline. No network. No spend.  Run: python3 -m unittest test_finalize -v
-"""
+"""Run finalisation and output tables."""
 import json
 import os
 import shutil
@@ -46,7 +26,6 @@ ROSTER = [{"series": "A", "id": "alpha/one", "cutoff": "2025-01", "basis": "PUB"
 
 
 def _interpretable_box(items, item_id):
-    """A box that genuinely answers THAT question -- A12 checks the answer against its own item."""
     import bench_formats as BF
     it = next(i for i in items if i["item_id"] == item_id)
     kind = BF.expected_answer_type(it["prompt"])
@@ -59,12 +38,6 @@ def _interpretable_box(items, item_id):
 
 def build_run_dir(d, complete_models=None, quarantine=None, pending=False, halted=False,
                   sidecar="full", n_models=None):
-    """A run directory exactly as the runner writes one, so finalize is exercised on real shapes.
-
-    n_models widens the synthetic roster. Needed because A1 now decides on a CONFIDENCE BOUND: the
-    3-model fixture yields 12 replies, whose 95% lower bound is 0.758 even at a 100% rate, so it
-    cannot demonstrate a passing A1 no matter how healthy it is.
-    """
     roster = ROSTER if not n_models else [
         {"series": "A", "id": f"prov{i % 4}/model{i}", "cutoff": "2025-01", "basis": "PUB",
          "release": "2025", "in": 1.0, "out": 2.0} for i in range(n_models)]
@@ -127,7 +100,6 @@ def build_run_dir(d, complete_models=None, quarantine=None, pending=False, halte
 
 
 class C1_TheLedgerSurvivesACrash(unittest.TestCase):
-    """A ledger written only at the end understates the spend of a run that died mid-flight."""
 
     def setUp(self):
         self.d = tempfile.mkdtemp()
@@ -144,7 +116,6 @@ class C1_TheLedgerSurvivesACrash(unittest.TestCase):
         self.assertEqual(len(back.entries), 2)
 
     def test_the_JOURNAL_WINS_over_a_stale_summary(self):
-        """The exact crash Codex named: records exist, resume skips them, the summary is behind."""
         led = SP.Ledger(ceiling=10.0, journal=self.j)
         led.charge("u1:1:first", "a/one", actual=0.25)
         led.save(os.path.join(self.d, "ledger.json"))       # summary written HERE
@@ -301,7 +272,6 @@ class C6_TheRawSidecarIsOneToOne(unittest.TestCase):
         self.assertIn("duplicated", str(cm.exception))
 
     def test_rows_carry_the_ATTEMPT_identity_not_just_the_unit(self):
-        """Keyed on model/item/arm alone, a retry cannot be told from a first attempt."""
         build_run_dir(self.d)
         rows = [json.loads(l) for l in open(os.path.join(self.d, "raw_responses.jsonl"))]
         for r in rows:

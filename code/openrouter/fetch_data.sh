@@ -1,16 +1,12 @@
 #!/usr/bin/env bash
 # Fetch the phase-2 benchmark corpora and rebuild the exact item files the runs used.
 #
-# The datasets are fetched rather than committed. This is a CHOICE, not a licence bar:
-#   FutureX-Past  futurex-ai/Futurex-Past   Apache-2.0     no restriction at all
-#   BTF-3         BTF-2/BTF-3               CC-BY-NC-4.0   redistribution IS allowed with
-#                                                          attribution; COMMERCIAL USE is not
-# Provenance, licences and derivation: docs/DATASETS-phase2.md
+#   FutureX-Past  futurex-ai/Futurex-Past   Apache-2.0
+#   BTF-3         BTF-2/BTF-3               CC-BY-NC-4.0   non-commercial use only
 #
-# BOTH DOWNLOADS ARE PINNED TO A COMMIT. This is not caution for its own sake: the FutureX
-# parquet CHANGED upstream after these runs (252,921 -> 257,915 bytes on 2026-08-11), so an
-# unpinned fetch would silently give you a different pool and a different 110-item draw.
-# Every file is sha256-verified and the script HALTS on any mismatch.
+# Both downloads are pinned to a commit and sha256-verified: the FutureX parquet differs at the
+# current upstream revision, so an unpinned fetch would give a different pool and a different draw.
+# Sources and licences: docs/DATASETS-phase2.md
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -97,7 +93,7 @@ m = os.path.join(R, "manifest_4d3477ce313573a7.json")
 if os.path.exists(m): shutil.copy(m, "runs/manifest_4d3477ce313573a7.json")
 print("  run artifacts restored")
 RESTORE
-echo "4/4  verifying the rebuild matches what the published records were bought against"
+echo "4/4  verifying the rebuild matches the corpora the records were produced from"
 python3 - <<'PY'
 import hashlib, sys
 EXPECT = {"runs/fx_items_110.json":  "14b03da5a8d2d892b756",
@@ -110,9 +106,8 @@ for p, pref in EXPECT.items():
     print(f"  {'OK  ' if ok else 'FAIL'} {p}  {got[:20]}")
     if not ok: bad.append((p, pref, got[:20]))
 if bad:
-    print("\nHALT: a rebuilt corpus does not match the one the published records were bought")
-    print("against. The draw is seeded, so this means the upstream data moved. Do not compare")
-    print("new calls against results/openrouter/*.jsonl.gz -- they would be different items.")
+    print("\nHALT: a rebuilt corpus does not match the expected hash -- the upstream data")
+    print("moved. New calls would use different items than results/openrouter/.")
     sys.exit(1)
 print("\nAll corpora reproduce byte-for-byte. Tests that need data can now run:")
 print("  python3 -m unittest discover -p 'test_*.py'")

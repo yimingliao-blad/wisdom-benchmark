@@ -1,12 +1,4 @@
-"""M6-T9/S4 — acceptance for the spend state machine.
-
-The two failures this guards, both of which cost real money:
-  * resume double-charging, because the ledger had its own identity space (audit D6)
-  * treating a max_tokens-derived ESTIMATE as a ceiling, when five providers ignore max_tokens
-    outright -- worst observed 98,349 billed against a 4,000 cap, 24.6x
-
-Offline. No network. No spend.  Run: python3 -m unittest test_spend -v
-"""
+"""Spend accounting."""
 import json
 import os
 import tempfile
@@ -30,7 +22,6 @@ class PricesAreFrozenFirst(unittest.TestCase):
 
 
 class TheCeilingIsEnforcedOnACTUALSpend(unittest.TestCase):
-    """max_tokens is not a cost bound, so the ceiling cannot be enforced on an estimate."""
 
     def test_the_estimate_is_named_a_planning_number_not_a_limit(self):
         p = SP.price_snapshot(ROSTER)
@@ -50,7 +41,6 @@ class TheCeilingIsEnforcedOnACTUALSpend(unittest.TestCase):
         self.assertIn("halted", str(cm.exception))
 
     def test_check_before_RAISES_rather_than_returning_false(self):
-        """A spend check that can be ignored is not a ceiling."""
         led = SP.Ledger(ceiling=0.05)
         led.charge("u1:1:first", "a/one", actual=0.06)
         with self.assertRaises(SP.SpendError):
@@ -69,7 +59,6 @@ class TheCeilingIsEnforcedOnACTUALSpend(unittest.TestCase):
 
 
 class ResumeDoesNotDoubleCharge(unittest.TestCase):
-    """Audit D6: a ledger with its own identity space can pay twice for one attempt."""
 
     def test_charging_the_same_attempt_twice_is_idempotent(self):
         led = SP.Ledger(ceiling=1.0)
@@ -79,7 +68,6 @@ class ResumeDoesNotDoubleCharge(unittest.TestCase):
         self.assertEqual(len(led.entries), 1)
 
     def test_a_RETRY_is_a_different_attempt_and_is_charged(self):
-        """Idempotence must not swallow a genuine second call."""
         led = SP.Ledger(ceiling=1.0)
         led.charge("u1:1:first", "a/one", actual=0.10)
         led.charge("u1:2:retry", "a/one", actual=0.10)
@@ -92,7 +80,6 @@ class ResumeDoesNotDoubleCharge(unittest.TestCase):
         self.assertTrue(aid.startswith(uid), "one identity space, not two")
 
     def test_a_resumed_run_reloads_the_ledger_not_just_the_records(self):
-        """A run that resumes work but not spend starts from zero and can spend the ceiling twice."""
         with tempfile.TemporaryDirectory() as d:
             p = os.path.join(d, "ledger.json")
             led = SP.Ledger(ceiling=1.0)
