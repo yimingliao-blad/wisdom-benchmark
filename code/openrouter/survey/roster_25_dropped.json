@@ -1,0 +1,22 @@
+{
+ "anthropic/claude-sonnet-5": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "deepseek/deepseek-v3.1-terminus": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "deepseek/deepseek-v3.2": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "z-ai/glm-5": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "openai/gpt-5.6-sol": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "google/gemini-3.5-flash": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "google/gemini-3.5-flash-lite": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "google/gemma-3-12b-it": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "x-ai/grok-4.5": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "moonshotai/kimi-k2.5": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "moonshotai/kimi-k2.6": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "minimax/minimax-m2.1": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "minimax/minimax-m3": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "mistralai/mistral-small-3.2-24b-instruct": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "nvidia/nemotron-3-super-120b-a12b": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "qwen/qwen3.5-122b-a10b": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "qwen/qwen3.5-27b": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "qwen/qwen3.5-397b-a17b": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "mistralai/mistral-medium-3.1": "not in the owner's 2026-08-09 list (was in roster_refined.json)",
+ "z-ai/glm-4.5": "not in the owner's 2026-08-09 list (was in roster_refined.json)"
+}

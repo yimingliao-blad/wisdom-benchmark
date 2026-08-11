@@ -21,6 +21,81 @@ the best individual. It is **not** a leaderboard — see *Threats to validity* i
 3. **Instruction compliance is a cheap, stable discriminator.** Asked for a bare final answer, models
    comply 38% / 28% / 10% of the time.
 
+## Phase 2 — 24 hosted models via OpenRouter (IN PROGRESS, partial data)
+
+> **⚠ These results are INCOMPLETE and are published as a partial artifact.** The paid run halted at
+> ~96% of its first arm when the OpenRouter organisation hit its monthly budget cap. Nothing here is a
+> final result and nothing should be read as a ranking. What it *is*: a fully instrumented benchmark
+> harness plus every row it has bought so far, so the accounting can be checked before the rest is run.
+
+Phase 1 (above) ran **3 local models**. Phase 2 runs **24 hosted models** against two forecasting
+benchmarks — **FutureX-Past** and **BTF-3** — with the model list held as *data*, not code.
+
+### What is actually answered so far
+
+| arm | planned units | answered | bought but unusable | no answer yet |
+|---|---|---|---|---|
+| FutureX, original prompt | 2,640 | **2,563** | 42 | 77 |
+| BTF-3, original prompt | 2,640 | 180 | 14 | 2,460 |
+| BTF-3, tightened prompt | 2,640 | 118 | 0 | 2,522 |
+
+A unit is one `(model, item, arm)` call. "Planned" is the current 24-model roster × 110 items.
+The 42 unusable FutureX units are 26 `UNDECIDED`, 14 `BUDGET_CAPPED` (killed mid-flight by the cap)
+and 2 `TRUNCATED`. Of the 77 with nothing, 20 were attempted and the call failed; 57 were never
+dispatched. They concentrate heavily: **nemotron-3-super 36 and llama-4-maverick 13 of the 77.**
+
+The two BTF manifests still carry the **superseded 37-model roster** (4,070 units), so their own
+`missing` figure counts models no longer on the list; the table above re-scopes them to the current 24.
+`results/openrouter/gap_analysis.json` reports both, and flags which manifests are stale.
+
+### One result that survived the partial run
+
+Splitting the reasoning-presence rate **per model** rather than pooling it: **`gpt-5.4` volunteers
+reasoning on only 45% of items**, where the rest of the roster volunteers it far more often. The
+follow-up chain-of-thought arm is conditional per item, so it is not a uniform overhead — it is roughly
+half the items for one model and a small tail for the others. The pooled rate hid this completely.
+Observed on one partial arm; not yet repeated.
+
+### The design choices worth stealing
+
+- **A failed call is not a result.** A call that delivers no body writes a *fault event*, never a
+  record. Mixing the two put 156 non-results in the results file and caused three separate defects —
+  resume counted them done, the duplicate checker counted them as repeats, and a third reader crashed
+  the run after every paid call had completed.
+- **Identity is roster-independent.** `unit_id = sha(model, item_id, arm)`. Amending the model list
+  cannot orphan calls it does not affect; a roster change is an explicit manifest **supersession**
+  with lineage, and already-answered units are kept, not re-bought.
+- **No invented token cap.** Each model is asked its own published ceiling, or nothing at all when it
+  publishes none; a ceiling is lowered only to fit the model's context window.
+- **Three denominators, never one.** `PLANNED = OBSERVED + UNOBSERVED + NEEDS_INSPECTION + CENSORED +
+  MISSING`. Truncation, refusal and infrastructure failure are separate outcomes, never folded
+  into "wrong".
+
+### Honest limits
+
+- **Unverified against the live API.** The infrastructure-fault policy is proven on a stubbed
+  transport through the real dispatch path. Real provider behaviour is not yet confirmed.
+- **Three known defects are open**, listed in `code/openrouter/DEFECTS.md`.
+- **Single observation per unit.** No repeats, so per-model rates on small cells are observations,
+  not stable frequencies.
+
+```
+code/openrouter/      34 tools + 25 tests      the phase-2 harness
+code/openrouter/survey/                        roster built from a plain model list (roster_build.py)
+results/openrouter/   records.jsonl.gz         every scored row, one per call, gzipped
+                      manifest.json            the frozen plan each run was bought against
+                      summary.csv              per model x run: complete/no_answer/truncated/missing
+                      gap_analysis.json        planned vs answered vs unusable, per arm
+```
+
+Run it: `python3 code/openrouter/run_openrouter.py --bench futurex --items <items.json>
+--models code/openrouter/survey/roster_25.json --max-calls N --max-spend D`.
+Both budget flags are **required** — it is a paid API and the caps are checked before the loop.
+Tests are offline and free, but **206 of 312 pass standalone** — the rest need the benchmark item
+corpora, which are not committed (third-party, and BTF-3 is CC-BY-NC-4.0). See
+[`code/openrouter/TESTING.md`](code/openrouter/TESTING.md) for exactly which files are required and
+which 20 test modules run without them.
+
 ## Layout
 
 ```

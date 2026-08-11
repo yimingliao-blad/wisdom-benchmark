@@ -3,3 +3,7 @@ repos/
 papers/
 __pycache__/
 *.pyc
+
+# phase-2 (OpenRouter): run dirs and fetched corpora are not committed — see code/openrouter/TESTING.md
+code/openrouter/runs/
+code/openrouter/**/__pycache__/

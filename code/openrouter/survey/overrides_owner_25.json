@@ -1,0 +1,75 @@
+{
+ "anthropic/claude-haiku-4.5": {
+  "cutoff": "2025-10",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "anthropic/claude-sonnet-4.6": {
+  "cutoff": "2026-01",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "openai/gpt-5.4": {
+  "cutoff": "2025-08-31",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "google/gemini-3.1-flash-lite": {
+  "cutoff": "2025-01",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "google/gemini-3.1-pro-preview": {
+  "cutoff": "2025-01",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "x-ai/grok-4.3": {
+  "cutoff": "2025-11",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model"
+ },
+ "mistralai/mistral-large-2512": {
+  "cutoff": "2025-12-01",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model; and weights=open because the catalog carries no hugging_face_id for it, which is a weak negative signal -- Mistral Large 3 is released under an open licence",
+  "weights": "open"
+ },
+ "z-ai/glm-4.7": {
+  "cutoff": "2025-07",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model"
+ },
+ "nvidia/nemotron-3-ultra-550b-a55b": {
+  "cutoff": "2025-12",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model"
+ },
+ "minimax/minimax-m2.5": {
+  "cutoff": "2025-01",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (from MODEL_CUTOFFS.md research)"
+ },
+ "meta-llama/llama-4-maverick": {
+  "cap": 16384,
+  "why": "the catalog publishes no max_completion_tokens for this model, so the derivation falls back to context_length = 1,048,576. That is a CONTEXT window, not a sane completion ceiling: budget escalation asks up to the cap, and D-OR-4 records five providers exceeding max_tokens by as much as 24.6x. 16384 is the value the run has always used and is kept deliberately."
+ },
+ "minimax/minimax-m3": {
+  "cutoff": "2026-01",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (MODEL_CUTOFFS.md research, 2026-08-07) [carried from the 37-model roster research, basis PUB]"
+ },
+ "qwen/qwen3.5-397b-a17b": {
+  "cutoff": "2026-02-16",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model [carried from the 37-model roster research, basis PROXY-STAGGERED]. NOTE: 2026-02-16 IS the contamination anchor exactly. It is admitted only because the test is strictly-after; a single day's drift in the vendor's figure would exclude it. Owner-visible decision, not an arithmetic accident."
+ },
+ "moonshotai/kimi-k2.6": {
+  "cutoff": "2025-04",
+  "why": "vendor-published cutoff, not carried in the OpenRouter catalog (MODEL_CUTOFFS.md research, 2026-08-07) [carried from the 37-model roster research, basis PUB]"
+ },
+ "moonshotai/kimi-k2.5": {
+  "cutoff": "2026-01-27",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model [carried from the 37-model roster research, basis PROXY]"
+ },
+ "deepseek/deepseek-v3.2": {
+  "cutoff": "2026-01",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model [carried from the 37-model roster research, basis PROXY]"
+ },
+ "z-ai/glm-5": {
+  "cutoff": "2026-01",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model [carried from the 37-model roster research, basis PROXY]"
+ },
+ "nvidia/nemotron-3-super-120b-a12b": {
+  "cutoff": "2025-12",
+  "why": "OpenRouter publishes no cutoff and the vendor none either; release-date proxy, which can only over-estimate recency and so can never wrongly admit a contaminated model [carried from the 37-model roster research, basis PROXY-STAGGERED]"
+ }
+}

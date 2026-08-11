@@ -1,0 +1,15 @@
+[
+ {
+  "series": "GLM-4.x",
+  "id": "z-ai/glm-4.5",
+  "cutoff": "2025-07",
+  "basis": "PROXY",
+  "release": "2025-07",
+  "in": 0.5,
+  "out": 2.0,
+  "params_b": 355,
+  "arch": "MoE",
+  "weights": "open",
+  "cap_exception": "replaces glm-4.6 (owner ruling 2026-08-08): 4.6 burns its entire budget on one (item, cot) pair returning 0 visible chars, reproducible. 4.5 is the same family and was in the full list, dropped earlier only by the 3-per-family cap."
+ }
+]

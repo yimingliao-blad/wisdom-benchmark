@@ -1,0 +1,39 @@
+{
+  "target_path": "/home/ra/Projects/claude/code/projects/crowd-wisdom/survey/DATASETS.md",
+  "created_at": "2026-08-05T12:30:00",
+  "claim": "Four of the six benchmarks are downloaded with row counts VERIFIED by counting the downloaded files (GPQA Diamond 198, AIME 2025 30, BBH 6,511 across 27 files / 23 paper-tasks, IFEval 541 with 25 instruction types). TruthfulQA is downloaded but DISPUTED — the authors' GitHub CSV has 790 rows / 37 categories while HF and the paper say 817 / 38. GAIA is BLOCKED by HF gating (403). Two owner decisions are needed: install a parquet reader, and accept the GAIA terms.",
+  "scope": "Job 1 only: locate the six named benchmarks, download what is obtainable, and verify their specs and publish dates. NOT in scope: any experimental design for the crowd-wisdom study, any choice of which version to actually use in the experiment, and any claim about what these benchmarks measure beyond the labels the owner supplied.",
+  "sources_read": [
+    "The downloaded files themselves, counted with pandas/json: data/gpqa/gpqa_diamond.csv (198 rows, 78 cols, domain counts), data/ifeval/ifeval_input_data.jsonl (541 rows, 25 distinct instruction_id types), data/bbh_json/*.json (27 files, 6,511 examples summed), data/truthfulqa_csv/TruthfulQA.csv (790 rows, 37 categories), data/aime_2025_jsonl/aime2025-{I,II}.jsonl (15+15)",
+    "HuggingFace dataset_info API for Idavidrein/gpqa, MathArena/aime_2026, MathArena/aime_2025, opencompass/AIME2025, lukaemon/bbh, google/IFEval, truthfulqa/truthful_qa, gaia-benchmark/GAIA, meta-agents-research-environments/gaia2 — file lists, sizes, gated flags, last-modified dates",
+    "WebSearch results for each benchmark: GPQA (arXiv 2311.12022, 2023-11-20), AIME 2025/2026 (MathArena), BBH (arXiv 2210.09261), BBEH (arXiv 2502.19187), IFEval (arXiv 2311.07911, 2023-11-14), TruthfulQA (arXiv 2109.07958), GAIA and GAIA2 (arXiv 2509.17158)",
+    "github.com/suzgunmirac/BIG-Bench-Hard contents API — the authors' own 27 task JSON files",
+    "The live HF 403 GatedRepoError returned for gaia-benchmark/GAIA under the freindst1 account"
+  ],
+  "sources_not_read": [
+    "The full text of every paper — publish dates and headline counts come from arXiv listing pages and search summaries, not from reading each paper end to end. The counts I VERIFIED are the ones I counted from files; the paper-reported figures are labelled as such.",
+    "The HF parquet files for AIME 2026, TruthfulQA (817-row canonical) and the HF copy of BBH — unreadable in this environment, no pyarrow/fastparquet. This is exactly why the TruthfulQA discrepancy is left OPEN rather than resolved.",
+    "GAIA's contents — gated, 403. Every GAIA size figure in the document is second-hand and labelled as unverified.",
+    "The BBEH dataset files — the GitHub repo was not cloned, only its existence and paper confirmed.",
+    "GAIA2's actual contents — only the HF file listing and sizes were read, not the scenarios."
+  ],
+  "contradictions_found": [
+    "TruthfulQA: the authors' GitHub CSV has 790 rows and 37 categories; HuggingFace truthfulqa/truthful_qa and the paper both say 817 rows and 38 categories. I could not determine which is authoritative because reading the HF parquet needs a package that is not installed. Recorded as DISPUTED with an explicit instruction not to quote an n until resolved, rather than silently reporting whichever number is convenient.",
+    "BBH: the paper says 23 tasks; the authors' repo ships 27 JSON files. RESOLVED by inspection — logical_deduction and tracking_shuffled_objects each ship three size variants that the paper counts as one task each (27 - 2x2 = 23). Both figures are correct at different granularity.",
+    "GAIA: search sources disagree on size — 450 total (300 test + 150 validation) in one, 165 validation tasks (53/86/26 by level) in another, with 466 commonly cited elsewhere. Unresolvable without repo access; all three are reported as unverified rather than one being picked.",
+    "google-deepmind/bbeh does not exist as an HF dataset (404) despite appearing in search results as if it were one; BBEH is distributed via GitHub."
+  ],
+  "prior_findings_reconciled": [
+    "none_found_after_search — crowd-wisdom is a new project with no prior plan, log, or findings in this repo. knowledge/INDEX.md and plans/INDEX.md contain no entry for it, and no existing plan references these six benchmarks.",
+    "Carried forward from this session's medical-logic work: the standing discipline that a count quoted from a paper or a search summary is a CLAIM until counted from the artifact. That is why every number in the table is marked VERIFIED (counted) or reported-by-source, and why the TruthfulQA mismatch is filed as open rather than averaged away."
+  ],
+  "unknowns": [
+    "Which TruthfulQA release is authoritative (790 vs 817) and why they differ — a revision, a pruning, or a different snapshot.",
+    "GAIA's true split sizes, and whether the media attachments are needed for the crowd-wisdom design at all.",
+    "Whether the experiment should use GAIA or GAIA2. GAIA2 is post-2024 and ungated, which fits the owner's stated preference, but it is an environment-simulation benchmark rather than static Q&A, so substituting it changes what is being measured. This is a design decision and is deliberately NOT made here.",
+    "Whether AIME 2026 or AIME 2025 should be used. 2026 is newer and less contaminated; 2025 is already on disk in a readable format. Both are post-2024.",
+    "Whether BBH or its post-2024 successor BBEH is wanted — the owner named BBH, and BBEH is harder and differently distributed."
+  ],
+  "why_complete_enough": "Job 1 asked for four things and each is either delivered or explicitly blocked with a named cause: the benchmarks are located (canonical repo identified for all six), downloaded (four fully verified, one disputed, one gated), their specs determined by counting the actual files rather than repeating a summary, and their publish dates found with a citation each. The post-2024 preference is answered per benchmark, including the three where a newer version exists (AIME 2025/2026, BBEH, GAIA2) and the three where none does. The two things that would change the numbers -- the parquet reader and the GAIA gate -- are named as blockers requiring owner action rather than worked around. Residual risk is disclosed above: papers were not read end to end, and every unverifiable figure is labelled as reported-by-source.",
+  "decision": "File the survey with four benchmarks VERIFIED, TruthfulQA DISPUTED and GAIA BLOCKED, and escalate the two blockers to the owner rather than resolving them unilaterally: installing pyarrow is a dependency change (ask-first per CLAUDE.md), and accepting GAIA's terms requires the owner's HF account. Do NOT choose between GAIA and GAIA2, between AIME 2025 and 2026, or between BBH and BBEH -- those are design decisions for the plan, and the survey records the trade-off for each instead of pre-empting it."
+}

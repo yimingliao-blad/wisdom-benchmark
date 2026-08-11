@@ -1,0 +1,59 @@
+{
+  "or_futurex_fxgate": {
+    "bench": "futurex",
+    "arm": "original",
+    "manifest_id": "1fda398e5a8e91aa",
+    "models_in_manifest": 24,
+    "manifest_matches_current_roster": true,
+    "planned_units": 2640,
+    "answered_units": 2563,
+    "verdicts": {
+      "COMPLETE": 2500,
+      "NO_ANSWER": 21,
+      "UNDECIDED": 26,
+      "BUDGET_CAPPED": 14,
+      "TRUNCATED": 2
+    },
+    "unusable_units": 42,
+    "units_with_no_answer": 77,
+    "rows_in_file": 3235,
+    "rows_that_delivered_nothing": 276,
+    "rows_out_of_plan": 516
+  },
+  "or_btf3_btfgate": {
+    "bench": "btf3",
+    "arm": "original",
+    "manifest_id": "e895defb47ef73ea",
+    "models_in_manifest": 37,
+    "manifest_matches_current_roster": false,
+    "planned_units": 4070,
+    "answered_units": 333,
+    "verdicts": {
+      "NO_ANSWER": 74,
+      "TRUNCATED": 14,
+      "COMPLETE": 245
+    },
+    "unusable_units": 14,
+    "units_with_no_answer": 3737,
+    "rows_in_file": 333,
+    "rows_that_delivered_nothing": 0,
+    "rows_out_of_plan": 0
+  },
+  "or_btf3_btftight": {
+    "bench": "btf3",
+    "arm": "tight",
+    "manifest_id": "f170562c5131c02f",
+    "models_in_manifest": 37,
+    "manifest_matches_current_roster": false,
+    "planned_units": 4070,
+    "answered_units": 217,
+    "verdicts": {
+      "COMPLETE": 217
+    },
+    "unusable_units": 0,
+    "units_with_no_answer": 3853,
+    "rows_in_file": 217,
+    "rows_that_delivered_nothing": 0,
+    "rows_out_of_plan": 0
+  }
+}

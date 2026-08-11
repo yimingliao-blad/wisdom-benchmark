@@ -1,0 +1,15 @@
+[
+ {
+  "series": "DeepSeek R1",
+  "id": "deepseek/deepseek-r1",
+  "cutoff": "2024-12",
+  "basis": "T2",
+  "release": "2025-01",
+  "in": 0.7,
+  "out": 2.5,
+  "weights": "open",
+  "params_b": 671,
+  "arch": "MoE",
+  "cap_exception": "kept by owner 2026-08-07 over the 3-per-family cap \u2014 the first major open reasoning model, not substitutable by a newer DeepSeek"
+ }
+]
